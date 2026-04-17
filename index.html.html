@@ -1,0 +1,2097 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CA-606 Code Practice</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,600;1,400&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0b0e14;
+  --sidebar: #0f1318;
+  --card: #13181f;
+  --border: #1e2530;
+  --text: #cdd6f4;
+  --muted: #45475a;
+  --correct: #a6e3a1;
+  --wrong: #f38ba8;
+  --cursor-bg: #f9e2af;
+  --cursor-fg: #1e1e2e;
+  --untyped: #585b70;
+  --blue: #89b4fa;
+  --peach: #fab387;
+  --mauve: #cba6f7;
+  --green: #a6e3a1;
+  --red: #f38ba8;
+  --yellow: #f9e2af;
+  --teal: #94e2d5;
+}
+
+body {
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── SIDEBAR ─────────────────────────────────── */
+#sidebar {
+  width: 272px;
+  min-width: 272px;
+  background: var(--sidebar);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#sidebar-header {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+}
+
+#sidebar-header h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--yellow);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+#sidebar-header p {
+  font-size: 9.5px;
+  color: var(--muted);
+  margin-top: 2px;
+  letter-spacing: 0.5px;
+}
+
+#search-wrap {
+  position: relative;
+  margin-top: 8px;
+}
+
+#search-wrap::before {
+  content: '⌕';
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-size: 12px;
+  pointer-events: none;
+}
+
+#search-input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 5px 8px 5px 24px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+#search-input::placeholder { color: var(--muted); }
+#search-input:focus { border-color: var(--blue); }
+
+#program-list {
+  overflow-y: auto;
+  flex: 1;
+  padding: 6px 0 16px;
+}
+
+.topic-group { margin-bottom: 2px; }
+
+.topic-header {
+  font-size: 9px;
+  font-weight: 600;
+  padding: 7px 14px 4px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  user-select: none;
+  position: sticky;
+  top: 0;
+  background: var(--sidebar);
+  z-index: 1;
+}
+
+.topic-header::before {
+  content: '▾';
+  font-size: 8px;
+  transition: transform 0.2s;
+  display: inline-block;
+}
+.topic-header.collapsed::before { transform: rotate(-90deg); }
+
+.topic-programs { padding: 1px 6px; }
+
+.program-item {
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.12s;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid transparent;
+}
+.program-item:hover { background: rgba(255,255,255,0.04); }
+.program-item.active {
+  background: rgba(137, 180, 250, 0.1);
+  border-color: rgba(137, 180, 250, 0.2);
+}
+
+.pi-slip {
+  font-size: 8.5px;
+  color: var(--muted);
+  min-width: 38px;
+  white-space: nowrap;
+}
+.program-item.active .pi-slip { color: var(--blue); }
+
+.pi-name {
+  font-size: 11px;
+  color: var(--text);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pi-done {
+  font-size: 9px;
+  color: var(--correct);
+  flex-shrink: 0;
+}
+
+/* ── MAIN ──────────────────────────────────────── */
+#main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* ── TOP BAR ───────────────────────────────────── */
+#top-bar {
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--card);
+  flex-shrink: 0;
+}
+
+#program-title { flex: 1; min-width: 0; }
+
+.title-main {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.title-q {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-style: italic;
+}
+
+/* ── STATS ─────────────────────────────────────── */
+#stats-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-shrink: 0;
+}
+
+.stat { text-align: center; }
+.stat-v {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--yellow);
+}
+.stat-l {
+  font-size: 8px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-top: 1px;
+}
+
+#prog-bar-wrap {
+  width: 140px;
+  height: 3px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+#prog-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--correct) 0%, var(--blue) 100%);
+  transition: width 0.1s ease;
+  border-radius: 3px;
+}
+
+/* ── CONTROLS ──────────────────────────────────── */
+.btn {
+  padding: 4px 11px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.btn:hover { color: var(--text); border-color: var(--blue); background: rgba(137,180,250,0.06); }
+.btn.danger:hover { color: var(--red); border-color: var(--red); background: rgba(243,139,168,0.06); }
+.btn.answer-active { color: var(--teal); border-color: var(--teal); background: rgba(148,226,213,0.1); }
+.btn.answer-active:hover { color: var(--teal); border-color: var(--teal); background: rgba(148,226,213,0.15); }
+.c.revealed { color: var(--untyped) !important; background: none !important; opacity: 0.5 !important; }
+.c.sp.revealed { color: transparent !important; background: none !important; border-bottom: 1px dotted var(--untyped) !important; opacity: 0.2 !important; }
+.c.nl.revealed { color: var(--untyped) !important; opacity: 0.2 !important; }
+
+/* Study Notes */
+#notes-panel {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+.notes-header {
+  padding: 10px 15px;
+  background: rgba(255,255,255,0.05);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 500;
+  user-select: none;
+}
+.notes-header:hover { background: rgba(255,255,255,0.1); }
+.notes-content {
+  padding: 15px;
+  font-size: 14px;
+  line-height: 1.5;
+  border-top: 1px solid var(--border);
+  color: var(--fg);
+}
+.notes-content code { background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.notes-content pre { background: rgba(0,0,0,0.3); padding: 10px; border-radius: 4px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 12px; margin-top: 10px;}
+.notes-content pre code { background: none; padding: 0; }
+.notes-content p { margin-top: 0; margin-bottom: 10px; }
+.notes-content p:last-child { margin-bottom: 0; }
+
+/* Hidden state — untyped chars completely invisible */
+.c.hidden { color: transparent !important; background: none !important; opacity: 0 !important; }
+.c.sp.hidden { color: transparent !important; background: none !important; border: none !important; opacity: 0 !important; }
+.c.nl.hidden { color: transparent !important; opacity: 0 !important; }
+.c.cursor.hidden { color: transparent !important; background: none !important; animation: none !important; opacity: 0 !important; }
+
+/* ── CODE AREA ─────────────────────────────────── */
+#code-wrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+#code-scroll {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  padding: 24px 28px 40px;
+  cursor: text;
+}
+
+#code-display {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13.5px;
+  line-height: 1.85;
+  white-space: pre;
+  tab-size: 2;
+  outline: none;
+  position: relative;
+}
+
+/* ── CHAR STATES ───────────────────────────────── */
+.c { border-radius: 2px; }
+.c.untyped { color: var(--untyped); }
+.c.correct { color: var(--correct); }
+.c.wrong   { color: var(--wrong); background: rgba(243,139,168,0.15); }
+
+.c.cursor {
+  color: var(--cursor-fg) !important;
+  background: var(--cursor-bg) !important;
+  border-radius: 2px;
+  animation: blink 1.1s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+/* space chars */
+.c.sp.untyped  { color: transparent; border-bottom: 1px dotted var(--border); }
+.c.sp.correct  { color: transparent; }
+.c.sp.wrong    { background: rgba(243,139,168,0.25); color: transparent; }
+.c.sp.cursor   { background: var(--cursor-bg) !important; color: transparent; }
+
+/* newline indicator */
+.c.nl {
+  font-size: 9px;
+  vertical-align: middle;
+  opacity: 0.3;
+}
+.c.nl.correct  { color: var(--correct); opacity: 0.4; }
+.c.nl.wrong    { color: var(--wrong); opacity: 0.7; }
+.c.nl.cursor   { opacity: 1; }
+
+/* ── WELCOME ───────────────────────────────────── */
+#welcome {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: var(--muted);
+  text-align: center;
+  padding: 40px;
+}
+
+#welcome .w-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: 1px;
+}
+
+#welcome .w-sub {
+  font-size: 11.5px;
+  line-height: 1.7;
+  max-width: 480px;
+  color: var(--muted);
+}
+
+.key-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 6px;
+}
+
+.key-pill {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 10.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text);
+}
+
+.key-pill kbd {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  color: var(--yellow);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+}
+
+.color-demo {
+  display: flex;
+  gap: 16px;
+  font-size: 11px;
+  margin-top: 4px;
+}
+.color-demo span { display: flex; align-items: center; gap: 5px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; }
+
+/* ── COMPLETION OVERLAY ────────────────────────── */
+#complete-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(11, 14, 20, 0.93);
+  backdrop-filter: blur(4px);
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  text-align: center;
+  z-index: 10;
+}
+#complete-overlay.show { display: flex; }
+
+.c-icon { font-size: 52px; line-height: 1; }
+
+.c-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--correct);
+}
+
+.c-stats {
+  font-size: 11px;
+  color: var(--muted);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 20px;
+  display: flex;
+  gap: 24px;
+}
+
+.c-stat { text-align: center; }
+.c-stat-v { font-size: 20px; font-weight: 600; color: var(--text); }
+.c-stat-l { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+
+.c-buttons { display: flex; gap: 8px; margin-top: 4px; }
+.c-btn {
+  padding: 7px 18px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.c-btn:hover { background: rgba(255,255,255,0.06); border-color: var(--blue); }
+.c-btn.primary {
+  background: rgba(166,227,161,0.15);
+  border-color: var(--correct);
+  color: var(--correct);
+}
+.c-btn.primary:hover { background: rgba(166,227,161,0.25); }
+
+/* ── SCROLLBAR ─────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* ── TOPIC COLORS ──────────────────────────────── */
+.th-JSP             { color: #fab387 !important; }
+.th-JDBC            { color: #89b4fa !important; }
+.th-Servlet         { color: #cba6f7 !important; }
+.th-Socket          { color: #a6e3a1 !important; }
+.th-Thread          { color: #f38ba8 !important; }
+.th-Android-SQLite  { color: #fab387 !important; }
+.th-Android-Intent  { color: #74c7ec !important; }
+.th-Google-Maps     { color: #94e2d5 !important; }
+
+/* ── HOTKEYS BAR ───────────────────────────────── */
+#hotkeys-bar {
+  border-top: 1px solid var(--border);
+  background: var(--card);
+  padding: 5px 20px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-size: 9.5px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+#hotkeys-bar span { display: flex; align-items: center; gap: 4px; }
+#hotkeys-bar kbd {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--yellow);
+  font-size: 9px;
+}
+
+/* ── SORT BUTTON ───────────────────────────────── */
+.sort-btn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: rgba(137,180,250,0.08);
+  color: var(--blue);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.sort-btn:hover { background: rgba(137,180,250,0.18); border-color: var(--blue); }
+.sort-btn.active { background: rgba(166,227,161,0.12); color: var(--correct); border-color: var(--correct); }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div id="sidebar">
+  <div id="sidebar-header">
+    <h1>CA-606 Practice</h1>
+    <p>Select a program and start typing</p>
+    <div id="search-wrap">
+      <input type="text" id="search-input" placeholder="Search slips, files...">
+    </div>
+    <button class="sort-btn" id="btn-sort" onclick="toggleSort()">📋 Sort by Slip</button>
+  </div>
+  <div id="program-list"></div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+  <!-- TOP BAR -->
+  <div id="top-bar">
+    <div id="program-title">
+      <div class="title-main" id="t-main">← Pick a program from the sidebar</div>
+      <div class="title-q" id="t-q">All 28 programs across 8 topics</div>
+    </div>
+    <div id="stats-row">
+      <div class="stat">
+        <div class="stat-v" id="sv-done">—</div>
+        <div class="stat-l">Done</div>
+      </div>
+      <div class="stat">
+        <div class="stat-v" id="sv-acc">—</div>
+        <div class="stat-l">Accuracy</div>
+      </div>
+      <div class="stat">
+        <div class="stat-v" id="sv-err">0</div>
+        <div class="stat-l">Errors</div>
+      </div>
+      <div id="prog-bar-wrap">
+        <div id="prog-bar"></div>
+      </div>
+      <button class="btn" id="btn-answer" onclick="toggleAnswer()" style="display:none" title="Ctrl+H">👁 Show Answer</button>
+      <button class="btn danger" onclick="resetTyping()">↺ Reset</button>
+    </div>
+  </div>
+
+  <!-- CODE AREA -->
+  <div id="code-wrap">
+    <div id="code-scroll" onclick="focusArea()">
+
+      <!-- EXPLANATION PANEL -->
+      <div id="notes-panel" style="display:none">
+        <div class="notes-header" onclick="toggleNotes()">
+          <span>📖 Study Notes & Tips</span>
+          <span id="notes-icon">▼</span>
+        </div>
+        <div class="notes-content" id="notes-content" style="display:none"></div>
+      </div>
+
+      <!-- WELCOME -->
+      <div id="welcome">
+        <div class="w-title">CA-606 Practice Typing</div>
+        <div class="w-sub">
+          Select any program from the sidebar. Type it character by character —
+          <span style="color:var(--correct)">green</span> for correct,
+          <span style="color:var(--wrong)">red</span> for wrong.
+          Backspace to go back and fix mistakes.
+        </div>
+        <div class="color-demo">
+          <span><span class="dot" style="background:var(--correct)"></span>Correct</span>
+          <span><span class="dot" style="background:var(--wrong)"></span>Wrong</span>
+          <span><span class="dot" style="background:var(--cursor-bg)"></span>Cursor</span>
+          <span><span class="dot" style="background:var(--untyped)"></span>Not yet typed</span>
+        </div>
+        <div class="key-grid">
+          <div class="key-pill"><kbd>Enter</kbd> = new line (↵)</div>
+          <div class="key-pill"><kbd>Tab</kbd> = skip spaces fast</div>
+          <div class="key-pill"><kbd>Backspace</kbd> = go back</div>
+          <div class="key-pill"><kbd>Esc</kbd> = reset</div>
+          <div class="key-pill"><kbd>→</kbd> = hint 1 char</div>
+        </div>
+        <div style="margin-top:25px; padding:15px; background:rgba(250,179,135,0.1); border-left:3px solid var(--peach); border-radius:6px; font-size:14px; color:var(--text);">
+          <strong style="color:var(--peach);">💡 IDE Pro-Tip for Packages:</strong><br>
+          Packages (<span><code style="background:var(--bg); padding:2px 4px; border-radius:3px;">package com.example;</code></span>) are intentionally omitted from these programs so you don't get IDE conflicts. When copying code into Eclipse or Android Studio, <strong>never paste over the very first line of your file!</strong> Let the IDE generate the package name, and paste the imports and class logic below it.
+        </div>
+      </div>
+
+      <!-- CODE DISPLAY (hidden until program loaded) -->
+      <pre id="code-display" style="display:none"></pre>
+
+      <!-- COMPLETION OVERLAY -->
+      <div id="complete-overlay">
+        <div class="c-icon">🎉</div>
+        <div class="c-title">Program Complete!</div>
+        <div class="c-stats">
+          <div class="c-stat">
+            <div class="c-stat-v" id="co-acc">—</div>
+            <div class="c-stat-l">Accuracy</div>
+          </div>
+          <div class="c-stat">
+            <div class="c-stat-v" id="co-err">—</div>
+            <div class="c-stat-l">Errors</div>
+          </div>
+          <div class="c-stat">
+            <div class="c-stat-v" id="co-time">—</div>
+            <div class="c-stat-l">Time</div>
+          </div>
+        </div>
+        <div class="c-buttons">
+          <button class="c-btn primary" onclick="resetTyping()">↺ Practice Again</button>
+          <button class="c-btn" onclick="nextProgram()">→ Next Program</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- HOTKEYS BAR -->
+  <div id="hotkeys-bar">
+    <span><kbd>Tab</kbd> auto-fills spaces</span>
+    <span><kbd>Enter</kbd> = ↵ newline</span>
+    <span><kbd>Backspace</kbd> = undo last char</span>
+    <span><kbd>Esc</kbd> = reset</span>
+    <span><kbd>Ctrl+H</kbd> = toggle answer</span>
+    <span><kbd>→</kbd> = hint 1 char</span>
+    <span id="hb-count" style="margin-left:auto"></span>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// PROGRAMS DATA
+// ══════════════════════════════════════════════════════════════
+
+const P = [
+  {
+    "id": "tmpl-jsp-logic",
+    "topic": "JSP",
+    "slip": "Template",
+    "name": "logic.jsp",
+    "q": "Master Template: JSP Logic Server Processing",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Retrieves the value sent by form.html using <code>request.getParameter()</code> and injects variables back into HTML via <code><%= result %></code>.",
+    "code": "<%@ page import=\"java.sql.*\" %>\n<%\n  String val = request.getParameter(\"val\");\n  \n  // YOUR LOGIC HERE\n  \n  String result = val; // example\n%>\n<html><body>\n  <h2><%=result%></h2>\n</body></html>"
+  },
+  {
+    "id": "tmpl-jsp-html",
+    "topic": "JSP",
+    "slip": "Template",
+    "name": "form.html",
+    "q": "Master Template: JSP HTML Input Form",
+    "explanation": "<strong>Tips from docs:</strong> ☛ This input form simply gathers a value and submits (POSTs) it to logic.jsp.",
+    "code": "<html><body>\n  <form action=\"logic.jsp\" method=\"post\">\n    Enter Value: <input type=\"text\" name=\"val\"/>\n    <input type=\"submit\" value=\"Submit\"/>\n  </form>\n</body></html>"
+  },
+  {
+    "id": "tmpl-serv",
+    "topic": "Servlet",
+    "slip": "Template",
+    "name": "ServletMaster.java",
+    "q": "Master Template: Servlet Lifecycle & HTTP Methods",
+    "explanation": "<strong>Tips from docs:</strong> ☛ MASTER TEMPLATE. @WebServlet maps URL. GET for default page, POST for form submission.",
+    "code": "import java.io.*; import javax.servlet.*; import javax.servlet.http.*;\nimport javax.servlet.annotation.WebServlet;\n\n@WebServlet(\"/myurl\")\npublic class MyServlet extends HttpServlet {\n  protected void doGet(HttpServletRequest req, HttpServletResponse res) throws Exception {\n    res.setContentType(\"text/html\");\n    PrintWriter out = res.getWriter();\n    // YOUR HTML OUTPUT HERE\n  }\n\n  protected void doPost(HttpServletRequest req, HttpServletResponse res) throws Exception {\n    res.setContentType(\"text/html\");\n    PrintWriter out = res.getWriter();\n    String val = req.getParameter(\"fieldname\");\n    // YOUR LOGIC HERE\n  }\n}"
+  },
+  {
+    "id": "tmpl-jdbc",
+    "topic": "JDBC",
+    "slip": "Template",
+    "name": "JDBCMaster.java",
+    "q": "Master Template: JDBC Connection & Execution (Memorize this!)",
+    "explanation": "<strong>Tips from docs:</strong> ☛ This is the MASTER TEMPLATE. The Connection Block never changes.<br>Only the operation inside main() changes per slip.",
+    "code": "import java.sql.*;\n\npublic class ClassName {\n  public static void main(String[] a) throws Exception {\n    Class.forName(\"org.postgresql.Driver\");\n    Connection con = DriverManager.getConnection(\n      \"jdbc:postgresql://localhost:5432/college\", \"postgres\", \"postgres\");\n\n    // YOUR OPERATION HERE (Pattern A, B, C, D, E, F)\n    // ResultSet rs = con.createStatement().executeQuery(\"SELECT ...\");\n\n    con.close();\n  }\n}"
+  },
+  {
+    "id": "j03",
+    "topic": "JSP",
+    "slip": "Slip 7",
+    "name": "email.html",
+    "q": "Email Validation — HTML form",
+    "code": "<form action=\"email.jsp\" method=\"post\">\n  Email: <input type=\"text\" name=\"email\"/>\n  <input type=\"submit\" value=\"Validate\"/>\n</form>",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Standard HTML form for email validation. Actions point to email.jsp."
+  },
+  {
+    "id": "j04",
+    "topic": "JSP",
+    "slip": "Slip 7",
+    "name": "email.jsp",
+    "q": "Validate given E-Mail ID using regex.",
+    "code": "<%\n  String email = request.getParameter(\"email\");\n  boolean valid = email.matches(\n    \"[a-zA-Z0-9._%+\\\\-]+@[a-zA-Z0-9.\\\\-]+\\\\.[a-zA-Z]{2,}\");\n  out.println(valid\n    ? \"<h2 style='color:green'>VALID Email</h2>\"\n    : \"<h2 style='color:red'>INVALID Email</h2>\");\n%>",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Uses regex <code>email.matches(\"[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}\")</code>.<br>If true, display VALID Email in green, else INVALID Email in red."
+  },
+  {
+    "id": "j05",
+    "topic": "JSP",
+    "slip": "Slip 14",
+    "name": "voter.html",
+    "q": "Voter Eligibility — HTML form",
+    "code": "<form action=\"voter.jsp\" method=\"post\">\n  Name: <input type=\"text\" name=\"name\"/>\n  Age:  <input type=\"number\" name=\"age\"/>\n  <input type=\"submit\" value=\"Check\"/>\n</form>",
+    "explanation": "<strong>Tips from docs:</strong> Voter eligibility form. Takes age as an input of type 'number'."
+  },
+  {
+    "id": "j06",
+    "topic": "JSP",
+    "slip": "Slip 14",
+    "name": "voter.jsp",
+    "q": "Accept Name and Age, check if eligible to vote.",
+    "code": "<%\n  String name = request.getParameter(\"name\");\n  int age = Integer.parseInt(request.getParameter(\"age\"));\n  if(age >= 18)\n    out.println(\"<h2 style='color:green'>\"+name+\" IS eligible to vote</h2>\");\n  else\n    out.println(\"<h2 style='color:red'>\"+name+\" is NOT eligible (Need 18+)</h2>\");\n%>",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Simply check <code>if(age >= 18)</code>.<br>Displays eligible in green, or NOT eligible in red."
+  },
+  {
+    "id": "j07",
+    "topic": "JSP",
+    "slip": "Slip 16",
+    "name": "login.html",
+    "q": "Login — HTML form",
+    "code": "<form action=\"login.jsp\" method=\"post\">\n  Username: <input type=\"text\" name=\"uname\"/>\n  Password: <input type=\"password\" name=\"pass\"/>\n  <input type=\"submit\" value=\"Login\"/>\n</form>",
+    "explanation": "<strong>Tips from docs:</strong> Standard login form using <code>input type=\"password\"</code>."
+  },
+  {
+    "id": "j08",
+    "topic": "JSP",
+    "slip": "Slip 16",
+    "name": "login.jsp",
+    "q": "Accept username and password. If same, display 'Login Successfully'.",
+    "code": "<%\n  String u = request.getParameter(\"uname\");\n  String p = request.getParameter(\"pass\");\n  if(u.equals(p))\n    out.println(\"<h2 style='color:green'>Login Successfully!</h2>\");\n  else\n    out.println(\"<h2 style='color:red'>Login Failed!</h2>\");\n%>",
+    "explanation": "<strong>Tips from docs:</strong> ☛ CAUTION: Always use <code>.equals()</code> for String comparison in Java, NOT <code>==</code>.<br>Example: <code>if(u.equals(p))</code>."
+  },
+  {
+    "id": "j09",
+    "topic": "JSP",
+    "slip": "Slip 19",
+    "name": "greet.html",
+    "q": "Greet by Server Time — HTML form",
+    "code": "<form action=\"greet.jsp\" method=\"post\">\n  Username: <input type=\"text\" name=\"uname\"/>\n  <input type=\"submit\" value=\"Greet\"/>\n</form>",
+    "explanation": "<strong>Tips from docs:</strong> Form to accept user name. Submits to greet.jsp."
+  },
+  {
+    "id": "j10",
+    "topic": "JSP",
+    "slip": "Slip 19",
+    "name": "greet.jsp",
+    "q": "Accept UserName and greet according to server time.",
+    "code": "<%@ page import=\"java.util.*\" %>\n<%\n  String name = request.getParameter(\"uname\");\n  int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);\n  String g = hour<12 ? \"Good Morning\" : hour<17 ? \"Good Afternoon\" : \"Good Evening\";\n  out.println(\"<h2>\" + g + \", \" + name + \"!</h2>\");\n%>",
+    "explanation": "<strong>Tips from docs:</strong> ☛ <code>Calendar.getInstance().get(Calendar.HOUR_OF_DAY)</code> gets current server hour.<br>☛ Greeting logic: < 12 Morning, < 17 Afternoon, else Evening."
+  },
+  {
+    "id": "d01",
+    "topic": "JDBC",
+    "slip": "Template",
+    "name": "ClassName.java",
+    "q": "JDBC Master Template — memorise this skeleton once.",
+    "code": "import java.sql.*;\npublic class ClassName {\n  public static void main(String[] a) throws Exception {\n    Class.forName(\"org.postgresql.Driver\");\n    Connection con = DriverManager.getConnection(\n      \"jdbc:postgresql://localhost:5432/college\", \"postgres\",\"postgres\");\n\n    // ★★ YOUR OPERATION HERE ★★\n\n    con.close();\n  }\n}"
+  },
+  {
+    "id": "d03",
+    "topic": "JDBC",
+    "slip": "Slip 9",
+    "name": "CreateEmp.java",
+    "q": "Create Emp(ENo,EName,Sal) table and insert records using PreparedStatement.",
+    "code": "import java.sql.*;\npublic class CreateEmp {\n  public static void main(String[] a) throws Exception {\n    Class.forName(\"org.postgresql.Driver\");\n    Connection con=DriverManager.getConnection(\n      \"jdbc:postgresql://localhost:5432/college\",\"postgres\",\"postgres\");\n    con.createStatement().execute(\n      \"CREATE TABLE IF NOT EXISTS Emp(ENo INT,EName VARCHAR(50),Sal DOUBLE PRECISION)\");\n    PreparedStatement ps=con.prepareStatement(\"INSERT INTO Emp VALUES(?,?,?)\");\n    ps.setInt(1,1); ps.setString(2,\"Amit\");  ps.setDouble(3,50000); ps.executeUpdate();\n    ps.setInt(1,2); ps.setString(2,\"Seeta\"); ps.setDouble(3,60000); ps.executeUpdate();\n    System.out.println(\"Inserted!\");\n    con.close();\n  }\n}",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Pattern B (INSERT).<br>☛ First, <code>CREATE TABLE IF NOT EXISTS</code>.<br>☛ Uses <code>INSERT INTO Emp VALUES(?,?,?)</code> with PreparedStatement."
+  },
+  {
+    "id": "d05",
+    "topic": "JDBC",
+    "slip": "Slip 27",
+    "name": "ScrollRS.java",
+    "q": "Implementation of scrollable ResultSet. (Assume Teacher table exists)",
+    "code": "import java.sql.*;\npublic class ScrollRS {\n  public static void main(String[] a) throws Exception {\n    Class.forName(\"org.postgresql.Driver\");\n    Connection con=DriverManager.getConnection(\n      \"jdbc:postgresql://localhost:5432/college\",\"postgres\",\"postgres\");\n    Statement st=con.createStatement(\n      ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);\n    ResultSet rs=st.executeQuery(\"SELECT * FROM Teacher\");\n    rs.first();     System.out.println(\"First: \"+rs.getString(\"TName\"));\n    rs.last();      System.out.println(\"Last:  \"+rs.getString(\"TName\"));\n    rs.absolute(2); System.out.println(\"Row 2: \"+rs.getString(\"TName\"));\n    con.close();\n  }\n}",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Pattern F (SCROLL).<br>Uses <code>TYPE_SCROLL_INSENSITIVE</code> and <code>CONCUR_READ_ONLY</code>.<br>Permits <code>rs.first()</code>, <code>rs.last()</code>, <code>rs.absolute(2)</code>."
+  },
+  {
+    "id": "s01",
+    "topic": "Servlet",
+    "slip": "Template",
+    "name": "MyServlet.java",
+    "q": "Servlet Master Template — memorise imports + doGet + doPost skeleton.",
+    "code": "import java.io.*; import javax.servlet.*; import javax.servlet.http.*;\nimport javax.servlet.annotation.WebServlet;\n\n@WebServlet(\"/myurl\")\npublic class MyServlet extends HttpServlet {\n  protected void doGet(HttpServletRequest req, HttpServletResponse res)\n      throws ServletException, IOException {\n    res.setContentType(\"text/html\");\n    PrintWriter out = res.getWriter();\n    // ★★ YOUR HTML OUTPUT HERE ★★\n  }\n  protected void doPost(HttpServletRequest req, HttpServletResponse res)\n      throws ServletException, IOException {\n    res.setContentType(\"text/html\");\n    PrintWriter out = res.getWriter();\n    String val = req.getParameter(\"fieldname\");\n    // ★★ YOUR LOGIC HERE ★★\n  }\n}"
+  },
+  {
+    "id": "s02",
+    "topic": "Servlet",
+    "slip": "Slip 4",
+    "name": "InfoServlet.java",
+    "q": "Provide information about HTTP request (IP, browser, OS, server).",
+    "code": "import java.io.*; import javax.servlet.*; import javax.servlet.http.*;\nimport javax.servlet.annotation.WebServlet;\n\n@WebServlet(\"/info\")\npublic class InfoServlet extends HttpServlet {\n  protected void doGet(HttpServletRequest req, HttpServletResponse res)\n      throws ServletException, IOException {\n    res.setContentType(\"text/html\"); PrintWriter out=res.getWriter();\n    out.println(\"<h2>HTTP Request Info</h2>\");\n    out.println(\"<b>Client IP:</b> \"+req.getRemoteAddr()+\"<br>\");\n    out.println(\"<b>Browser:</b> \"+req.getHeader(\"User-Agent\")+\"<br>\");\n    out.println(\"<b>Method:</b> \"+req.getMethod()+\"<br>\");\n    out.println(\"<b>OS:</b> \"+System.getProperty(\"os.name\")+\"<br>\");\n    out.println(\"<b>Server:</b> \"+req.getServerName()+\"<br>\");\n    out.println(\"<b>Port:</b> \"+req.getServerPort()+\"<br>\");\n  }\n}",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Uses HTTP Request APIs:<br><code>getRemoteAddr()</code>, <code>getHeader(\"User-Agent\")</code>, <code>getMethod()</code>, and <code>getServerName()</code>."
+  },
+  {
+    "id": "s04",
+    "topic": "Servlet",
+    "slip": "Slip 23",
+    "name": "LoginServlet.java",
+    "q": "Accept username+password, search in DB, display Login Successful or Invalid.",
+    "code": "import java.io.*; import java.sql.*; import javax.servlet.*; import javax.servlet.http.*;\nimport javax.servlet.annotation.WebServlet;\n\n@WebServlet(\"/login\")\npublic class LoginServlet extends HttpServlet {\n  protected void doGet(HttpServletRequest req, HttpServletResponse res) throws Exception {\n    res.getWriter().println(\n      \"<form method='post'>Username:<input name='uname'/>\"+\n      \"Password:<input type='password' name='pass'/>\"+\n      \"<input type='submit' value='Login'/></form>\");\n  }\n  protected void doPost(HttpServletRequest req, HttpServletResponse res) throws Exception {\n    res.setContentType(\"text/html\"); PrintWriter out=res.getWriter();\n    String user=req.getParameter(\"uname\"), pass=req.getParameter(\"pass\");\n    Class.forName(\"org.postgresql.Driver\");\n    Connection con=DriverManager.getConnection(\n      \"jdbc:postgresql://localhost:5432/college\",\"postgres\",\"postgres\");\n    PreparedStatement ps=con.prepareStatement(\n      \"SELECT * FROM users WHERE username=? AND password=?\");\n    ps.setString(1,user); ps.setString(2,pass); ResultSet rs=ps.executeQuery();\n    out.println(rs.next()\n      ? \"<h2 style='color:green'>Login Successful!</h2>\"\n      : \"<h2 style='color:red'>Invalid credentials!</h2>\");\n    con.close();\n  }\n}",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Login inside Servlet. Combines HTML generation in <code>doGet</code> and JDBC logic in <code>doPost</code>.<br>Remember to include PostgreSQL Driver <code>Class.forName...</code>."
+  },
+  {
+    "id": "s05",
+    "topic": "Servlet",
+    "slip": "Slip 29",
+    "name": "SessionServlet.java",
+    "q": "Change inactive time interval of session. Show session ID and visit count.",
+    "code": "import java.io.*;\nimport javax.servlet.*;\nimport javax.servlet.http.*;\n@WebServlet(\"/session\")\npublic class SessionServlet extends HttpServlet {\n  protected void doGet(HttpServletRequest req, HttpServletResponse res) throws Exception {\n    res.setContentType(\"text/html\"); PrintWriter out=res.getWriter();\n    HttpSession session=req.getSession(true);\n    session.setMaxInactiveInterval(120);\n    Integer count=(Integer)session.getAttribute(\"count\");\n    if(count==null) count=0;\n    session.setAttribute(\"count\",++count);\n    out.println(\"Session ID: \"+session.getId()+\"<br>\");\n    out.println(\"Max Inactive: \"+session.getMaxInactiveInterval()+\" seconds<br>\");\n    out.println(\"Visit Count: \"+count);\n  }\n}",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Session API: <code>HttpSession session = req.getSession(true)</code>.<br>☛ <code>setMaxInactiveInterval(120)</code> sets timeout to 2 minutes."
+  },
+  {
+    "id": "t01",
+    "topic": "Thread",
+    "slip": "Slip 15",
+    "name": "AlphabetDisplay.java",
+    "q": "Display each alphabet after 2 seconds between 'a' to 'z'.",
+    "code": "public class AlphabetDisplay {\n  public static void main(String[] a) throws InterruptedException {\n    for(char c='a'; c<='z'; c++) {\n      System.out.println(c);\n      Thread.sleep(2000);\n    }\n  }\n}",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Loop characters: <code>for(char c='a'; c<='z'; c++)</code>.<br>Thread.sleep(2000) pauses for 2 seconds."
+  },
+  {
+    "id": "t02",
+    "topic": "Thread",
+    "slip": "Slip 13",
+    "name": "ThreadName.java",
+    "q": "Display name of currently executing Thread in multithreading.",
+    "code": "public class ThreadName {\n  public static void main(String[] a) throws Exception {\n    System.out.println(\"Main: \"+Thread.currentThread().getName());\n    Thread t=new Thread(()->\n      System.out.println(\"Running: \"+Thread.currentThread().getName()),\"Worker-1\");\n    t.start(); t.join();\n  }\n}"
+  },
+  {
+    "id": "t03",
+    "topic": "Thread",
+    "slip": "Slip 21",
+    "name": "ThreadInfo.java",
+    "q": "Display name and priority of a Thread (MAX, NORM, MIN priority).",
+    "code": "public class ThreadInfo {\n  static class MyThread extends Thread {\n    public MyThread(String name,int prio){ super(name); setPriority(prio); }\n    public void run(){\n      System.out.println(\"Name: \"+getName()+\" | Priority: \"+getPriority());\n    }\n  }\n  public static void main(String[] a) {\n    System.out.println(\"Main: \"+Thread.currentThread().getName()+\n      \" | Priority: \"+Thread.currentThread().getPriority());\n    new MyThread(\"HighThread\",  Thread.MAX_PRIORITY).start();\n    new MyThread(\"NormalThread\",Thread.NORM_PRIORITY).start();\n    new MyThread(\"LowThread\",  Thread.MIN_PRIORITY).start();\n  }\n}",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Shows priority constants: <code>Thread.MAX_PRIORITY (10)</code>, <code>NORM_PRIORITY (5)</code>, <code>MIN_PRIORITY (1)</code>."
+  },
+  {
+    "id": "t04",
+    "topic": "Thread",
+    "slip": "Slip 12",
+    "name": "ThreadLifecycle.java",
+    "q": "Show lifecycle of a thread: NEW → RUNNABLE → TIMED_WAITING → TERMINATED.",
+    "code": "public class ThreadLifecycle {\n  static class MyThread extends Thread {\n    public MyThread(String name){ super(name); }\n    public void run() {\n      System.out.println(getName()+\" State: \"+getState());\n      int ms=(int)(Math.random()*5000);\n      System.out.println(getName()+\" sleeping \"+ms+\"ms\");\n      try{ Thread.sleep(ms); }catch(InterruptedException e){}\n      System.out.println(getName()+\" finished.\");\n    }\n  }\n  public static void main(String[] a) throws Exception {\n    MyThread t1=new MyThread(\"Alpha\"), t2=new MyThread(\"Beta\");\n    System.out.println(t1.getName()+\" State: \"+t1.getState());\n    t1.start(); t2.start();\n    System.out.println(t1.getName()+\" State: \"+t1.getState());\n    t1.join(); t2.join();\n    System.out.println(t1.getName()+\" State: \"+t1.getState());\n  }\n}",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Demonstrates NEW → RUNNABLE → TIMED_WAITING → TERMINATED lifecycle.<br>Uses <code>Math.random()</code> for sleep time to show async behaviour."
+  },
+  {
+    "id": "a01",
+    "topic": "Android SQLite",
+    "slip": "Template",
+    "name": "DBHelper.java",
+    "q": "Android SQLite Master Template — 4 swap spots: DB name, CREATE TABLE, DROP name, cv.put().",
+    "code": "import android.content.ContentValues; import android.content.Context;\nimport android.database.Cursor; import android.database.sqlite.*;\n\npublic class DBHelper extends SQLiteOpenHelper {\n  public DBHelper(Context ctx){ super(ctx,\"MyDB\",null,1); }\n\n  @Override public void onCreate(SQLiteDatabase db){\n    db.execSQL(\"CREATE TABLE Employee(Eno INTEGER PRIMARY KEY AUTOINCREMENT,\" +\n      \"Ename TEXT,Designation TEXT,Salary REAL)\");\n  }\n\n  @Override public void onUpgrade(SQLiteDatabase db,int a,int b){\n    db.execSQL(\"DROP TABLE IF EXISTS Employee\"); onCreate(db);\n  }\n\n  public long insert(String name,String desg,double sal){\n    ContentValues cv=new ContentValues();\n    cv.put(\"Ename\",name); cv.put(\"Designation\",desg); cv.put(\"Salary\",sal);\n    return getWritableDatabase().insert(\"Employee\",null,cv);\n  }\n\n  public Cursor getAll(){\n    return getReadableDatabase().rawQuery(\"SELECT * FROM Employee\",null);\n  }\n\n  public int delete(int id){\n    return getWritableDatabase().delete(\n      \"Employee\",\"Eno=?\",new String[]{String.valueOf(id)});\n  }\n}"
+  },
+  {
+    "id": "a02",
+    "topic": "Android SQLite",
+    "slip": "Slip 10",
+    "name": "DBHelper.java (Game)",
+    "q": "Game(gno,gname,type,no_of_players). Extra updateBadminton() method.",
+    "code": "public class DBHelper extends SQLiteOpenHelper {\n  public DBHelper(Context ctx){ super(ctx,\"GameDB\",null,1); }\n\n  @Override public void onCreate(SQLiteDatabase db){\n    db.execSQL(\"CREATE TABLE Game(gno INTEGER PRIMARY KEY AUTOINCREMENT,\" +\n      \"gname TEXT,type TEXT,no_of_players INTEGER)\");\n  }\n\n  @Override public void onUpgrade(SQLiteDatabase db,int a,int b){\n    db.execSQL(\"DROP TABLE IF EXISTS Game\"); onCreate(db);\n  }\n\n  public long insert(String name,String type,int players){\n    ContentValues cv=new ContentValues();\n    cv.put(\"gname\",name); cv.put(\"type\",type); cv.put(\"no_of_players\",players);\n    return getWritableDatabase().insert(\"Game\",null,cv);\n  }\n\n  public void updateBadminton(){\n    ContentValues cv=new ContentValues(); cv.put(\"no_of_players\",4);\n    getWritableDatabase().update(\"Game\",cv,\"gname=?\",new String[]{\"Badminton\"});\n  }\n\n  public Cursor getAll(){\n    return getReadableDatabase().rawQuery(\"SELECT * FROM Game\",null);\n  }\n}"
+  },
+  {
+    "id": "m01",
+    "topic": "Google Maps",
+    "slip": "Template",
+    "name": "MapsActivity.java",
+    "q": "Google Maps template. Swap map type and LatLng coordinates per slip.",
+    "code": "import com.google.android.gms.maps.*; import com.google.android.gms.maps.model.*;\nimport androidx.fragment.app.FragmentActivity;\n\npublic class MapsActivity extends FragmentActivity implements OnMapReadyCallback {\n  GoogleMap gMap;\n\n  @Override protected void onCreate(Bundle b){\n    super.onCreate(b); setContentView(R.layout.activity_maps);\n    ((SupportMapFragment)getSupportFragmentManager()\n      .findFragmentById(R.id.map)).getMapAsync(this);\n  }\n\n  @Override public void onMapReady(GoogleMap map){\n    gMap=map;\n    gMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);\n    LatLng loc=new LatLng(18.5204,73.8567);\n    gMap.addMarker(new MarkerOptions().position(loc).title(\"Pune\"));\n    gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(loc,12));\n  }\n}"
+  },
+  {
+    "id": "jdbc-04",
+    "topic": "JDBC",
+    "slip": "Slip 4",
+    "name": "DeleteStudents.java",
+    "q": "Write a Java Program to delete details of students whose name starts with \"S\".",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Uses Pattern C: <code>DELETE FROM student WHERE sname LIKE ?</code>. Sets parameters with <code>\"S%\"</code>.",
+    "code": "import java.sql.*;\n\npublic class DeleteStudents {\n  public static void main(String[] a) throws Exception {\n    Class.forName(\"org.postgresql.Driver\");\n    Connection con=DriverManager.getConnection(\"jdbc:postgresql://localhost:5432/college\",\"postgres\",\"postgres\");\n\n    PreparedStatement ps=con.prepareStatement(\"DELETE FROM student WHERE sname LIKE ?\");\n    ps.setString(1,\"S%\");\n    int rows=ps.executeUpdate();\n    System.out.println(rows+\" record(s) deleted where name starts with S\");\n\n    con.close();\n  }\n}"
+  },
+  {
+    "id": "thr-07",
+    "topic": "Thread",
+    "slip": "Slip 7",
+    "name": "NumberDisplay.java",
+    "q": "Write a Multithreading program to display numbers 1-100 continuously in a TextField by clicking on button.",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Implements Runnable + ActionListener. Swing updates MUST run on EDT via <code>SwingUtilities.invokeLater()</code>. Use <code>Thread.sleep(100)</code> for animation effect.",
+    "code": "import javax.swing.*; import java.awt.*; import java.awt.event.*;\n\npublic class NumberDisplay extends JFrame implements Runnable, ActionListener {\n  JTextField tf=new JTextField(10); JButton btn=new JButton(\"Start\");\n\n  public NumberDisplay() {\n    setLayout(new FlowLayout()); add(new JLabel(\"Number:\")); add(tf); add(btn);\n    btn.addActionListener(this); setSize(300,100); setVisible(true); setDefaultCloseOperation(3);\n  }\n\n  public void run() {\n    while(true){ for(int i=1;i<=100;i++){\n      final int n=i; SwingUtilities.invokeLater(()->tf.setText(String.valueOf(n)));\n      try{Thread.sleep(100);}catch(Exception e){}\n    }}\n  }\n\n  public void actionPerformed(ActionEvent e){ new Thread(this).start(); }\n  public static void main(String[] a){ new NumberDisplay(); }\n}"
+  },
+  {
+    "id": "jsp-09-1",
+    "topic": "JSP",
+    "slip": "Slip 9",
+    "name": "page1.jsp",
+    "q": "Online Shopping Mall using session. Purchase from 2 pages, 3rd page shows bill.",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Uses <code>&lt;%@ page session=\"true\" %&gt;</code>. Passes running totals into <code>session.setAttribute</code>.",
+    "code": "<%@ page session=\"true\" %>\n<html><body>\n<form action=\"page2.jsp\" method=\"post\">\n  Item 1 Qty: <input type=\"text\" name=\"qty1\" value=\"1\"/>  Price: Rs.100<br>\n  Item 2 Qty: <input type=\"text\" name=\"qty2\" value=\"1\"/>  Price: Rs.200<br>\n  <input type=\"submit\" value=\"Next Page\"/>\n</form>\n</body></html>\n<%\n  int qty1=Integer.parseInt(request.getParameter(\"qty1\")==null?\"1\":request.getParameter(\"qty1\"));\n  int qty2=Integer.parseInt(request.getParameter(\"qty2\")==null?\"1\":request.getParameter(\"qty2\"));\n  int p1Total=qty1*100+qty2*200;\n  session.setAttribute(\"p1Total\",p1Total);\n%>"
+  },
+  {
+    "id": "jsp-09-2",
+    "topic": "JSP",
+    "slip": "Slip 9",
+    "name": "page2.jsp",
+    "q": "Second page of shopping cart.",
+    "code": "<%@ page session=\"true\" %>\n<%\n  int qty3=Integer.parseInt(request.getParameter(\"qty3\")==null?\"1\":request.getParameter(\"qty3\"));\n  int p2Total=qty3*150;\n  session.setAttribute(\"p2Total\",p2Total);\n%>\n<form action=\"bill.jsp\" method=\"post\"><input type=\"text\" name=\"qty3\" value=\"1\"/> Rs.150 each<br>\n<input type=\"submit\" value=\"Show Bill\"/></form>"
+  },
+  {
+    "id": "jsp-09-3",
+    "topic": "JSP",
+    "slip": "Slip 9",
+    "name": "bill.jsp",
+    "q": "Final bill calculation.",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Recovers items using <code>(Integer)session.getAttribute()</code>.",
+    "code": "<%@ page session=\"true\" %>\n<%\n  int p1=(Integer)session.getAttribute(\"p1Total\");\n  int p2=(Integer)session.getAttribute(\"p2Total\");\n  int grand=p1+p2;\n%>\n<h2>BILL</h2>\n<p>Page 1 Total: Rs.<%=p1%></p>\n<p>Page 2 Total: Rs.<%=p2%></p>\n<h3>Grand Total: Rs.<%=grand%></h3>"
+  },
+  {
+    "id": "hib-10-c",
+    "topic": "Hibernate",
+    "slip": "Slip 10",
+    "name": "hibernate.cfg.xml",
+    "q": "Hibernate config file.",
+    "code": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE hibernate-configuration PUBLIC \"-//Hibernate/Hibernate Configuration DTD 3.0//EN\"\n  \"http://hibernate.sourceforge.net/hibernate-configuration-3.0.dtd\">\n<hibernate-configuration><session-factory>\n  <property name=\"connection.driver_class\">org.postgresql.Driver</property>\n  <property name=\"connection.url\">jdbc:postgresql://localhost:5432/college</property>\n  <property name=\"connection.username\">root</property>\n  <property name=\"connection.password\">root</property>\n  <property name=\"dialect\">org.hibernate.dialect.MySQLDialect</property>\n  <property name=\"show_sql\">true</property>\n</session-factory></hibernate-configuration>"
+  },
+  {
+    "id": "hib-10-j",
+    "topic": "Hibernate",
+    "slip": "Slip 10",
+    "name": "HelloHibernate.java",
+    "q": "Write a program in Hibernate to display \"Hello world\" message.",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Requires hibernate-core JAR. Builds session factory via <code>Configuration().configure()</code>.",
+    "code": "import org.hibernate.*;\nimport org.hibernate.cfg.Configuration;\n\npublic class HelloHibernate {\n  public static void main(String[] a) {\n    SessionFactory sf=new Configuration().configure().buildSessionFactory();\n    Session s=sf.openSession();\n\n    System.out.println(\"Hello World from Hibernate!\");\n    System.out.println(\"Connection successful: \"+s.isConnected());\n\n    s.close(); sf.close();\n  }\n}"
+  },
+  {
+    "id": "serv-10",
+    "topic": "Servlet",
+    "slip": "Slip 10",
+    "name": "ProductServlet.java",
+    "q": "Display the details of Product table on the browser in tabular format.",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Dynamically writes an HTML table and iterates over a ResultSet via <code>con.createStatement().executeQuery()</code>.",
+    "code": "import java.util.*;\nimport java.io.*; import java.sql.*; import javax.servlet.*; import javax.servlet.http.*;\nimport javax.servlet.annotation.WebServlet;\n\n@WebServlet(\"/products\")\npublic class ProductServlet extends HttpServlet {\n  protected void doGet(HttpServletRequest req, HttpServletResponse res) throws Exception {\n    res.setContentType(\"text/html\"); PrintWriter out=res.getWriter();\n    out.println(\"<html><body><h2>Product List</h2>\");\n    out.println(\"<table border=1><tr><th>ProdCode</th><th>PName</th><th>Price</th></tr>\");\n\n    Class.forName(\"org.postgresql.Driver\");\n    Connection con=DriverManager.getConnection(\"jdbc:postgresql://localhost:5432/college\",\"postgres\",\"postgres\");\n    ResultSet rs=con.createStatement().executeQuery(\"SELECT * FROM Product\");\n\n    while(rs.next()) out.println(\"<tr><td>\"+rs.getString(1)+\"</td><td>\"+rs.getString(2)+\"</td><td>\"+rs.getDouble(3)+\"</td></tr>\");\n    out.println(\"</table></body></html>\"); con.close();\n  }\n}"
+  },
+  {
+    "id": "java-11",
+    "topic": "Java",
+    "slip": "Slip 11",
+    "name": "IPDisplay.java",
+    "q": "Display IP Address and name of client machine",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Use <code>InetAddress.getLocalHost()</code> block. Imports <code>java.net.*</code>.",
+    "code": "import java.net.*;\n\npublic class IPDisplay {\n  public static void main(String[] a) throws Exception {\n    InetAddress ia=InetAddress.getLocalHost();\n    System.out.println(\"IP Address: \"+ia.getHostAddress());\n    System.out.println(\"Host Name:  \"+ia.getHostName());\n  }\n}"
+  },
+  {
+    "id": "jdbc-11",
+    "topic": "JDBC",
+    "slip": "Slip 11",
+    "name": "SalesBetweenDates.java",
+    "q": "Display sales details between two selected dates",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Standard JDBC query but uses the <code>BETWEEN ? AND ?</code> SQL operator.",
+    "code": "import java.sql.*; import java.util.Scanner;\n\npublic class SalesBetweenDates {\n  public static void main(String[] a) throws Exception {\n    Scanner sc=new Scanner(System.in);\n    System.out.print(\"Start date (YYYY-MM-DD): \"); String d1=sc.next();\n    System.out.print(\"End   date (YYYY-MM-DD): \"); String d2=sc.next();\n\n    Class.forName(\"org.postgresql.Driver\");\n    Connection con=DriverManager.getConnection(\"jdbc:postgresql://localhost:5432/college\",\"postgres\",\"postgres\");\n\n    PreparedStatement ps=con.prepareStatement(\n      \"SELECT PID,PName,Qty,Rate,Amount FROM Sales WHERE sdate BETWEEN ? AND ?\");\n    ps.setString(1,d1); ps.setString(2,d2);\n    ResultSet rs=ps.executeQuery();\n\n    System.out.println(\"PID | PName | Qty | Rate | Amount\");\n    while(rs.next()) System.out.println(rs.getInt(1)+\" | \"+rs.getString(2)+\" | \"+rs.getInt(3)+\" | \"+rs.getDouble(4)+\" | \"+rs.getDouble(5));\n\n    con.close();\n  }\n}"
+  },
+  {
+    "id": "jdbc-12",
+    "topic": "JDBC",
+    "slip": "Slip 12",
+    "name": "CountRecords.java",
+    "q": "Count the number of records in a table.",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Uses Pattern D (COUNT): <code>SELECT COUNT(*) AS total</code>. Retrieves it with <code>rs.getInt(\"total\")</code>.",
+    "code": "import java.sql.*;\n\npublic class CountRecords {\n  public static void main(String[] a) throws Exception {\n    Class.forName(\"org.postgresql.Driver\");\n    Connection con=DriverManager.getConnection(\"jdbc:postgresql://localhost:5432/college\",\"postgres\",\"postgres\");\n\n    ResultSet rs=con.createStatement().executeQuery(\"SELECT COUNT(*) AS total FROM student\");\n    if(rs.next()) System.out.println(\"Total Records: \"+rs.getInt(\"total\"));\n\n    con.close();\n  }\n}"
+  },
+  {
+    "id": "thr-13",
+    "topic": "Thread",
+    "slip": "Slip 13",
+    "name": "ThreadName.java",
+    "q": "Display name of currently executing Thread",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Simple use of <code>Thread.currentThread().getName()</code>.",
+    "code": "public class ThreadName {\n  public static void main(String[] a) throws Exception {\n    System.out.println(\"Main thread: \"+Thread.currentThread().getName());\n    Thread t=new Thread(()->System.out.println(\"Running: \"+Thread.currentThread().getName()),\"Worker-1\");\n    t.start(); t.join();\n  }\n}"
+  },
+  {
+    "id": "jsp-13",
+    "topic": "JSP",
+    "slip": "Slip 13",
+    "name": "college.jsp",
+    "q": "Display College details in tabular form on browser",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Inline JDBC inside JSP scriptlet. HTML and ResultSet mixed.",
+    "code": "<%@ page import=\"java.sql.*\" %>\n<%\n  Class.forName(\"org.postgresql.Driver\");\n  Connection con=DriverManager.getConnection(\"jdbc:postgresql://localhost:5432/college\",\"postgres\",\"postgres\");\n  ResultSet rs=con.createStatement().executeQuery(\"SELECT * FROM College\");\n%>\n<html><body><h2>College Details</h2>\n<table border=\"1\"><tr><th>CollegeID</th><th>Coll_Name</th><th>Address</th></tr>\n<% while(rs.next()){ %>\n<tr><td><%=rs.getString(\"CollegeID\")%></td><td><%=rs.getString(\"Coll_Name\")%></td><td><%=rs.getString(\"Address\")%></td></tr>\n<% } con.close(); %>\n</table></body></html>"
+  },
+  {
+    "id": "java-14",
+    "topic": "Java",
+    "slip": "Slip 14",
+    "name": "FileList.java",
+    "q": "Display given extension files from a specific directory on server machine",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Uses <code>java.io.File</code>. Implements <code>listFiles((d,name)->name.endsWith(ext))</code> filter.",
+    "code": "import java.io.*; import java.util.Scanner;\n\npublic class FileList {\n  public static void main(String[] a) {\n    Scanner sc=new Scanner(System.in);\n    System.out.print(\"Enter directory path: \"); String dir=sc.nextLine();\n    System.out.print(\"Enter extension (e.g. .txt): \"); String ext=sc.next();\n\n    File folder=new File(dir);\n    File[] files=folder.listFiles((d,name)->name.endsWith(ext));\n\n    if(files==null||files.length==0){ System.out.println(\"No \"+ext+\" files found.\"); return; }\n    System.out.println(ext+\" files in \"+dir+\":\");\n    for(File f:files) System.out.println(\"  \"+f.getName());\n  }\n}"
+  },
+  {
+    "id": "jdbc-15",
+    "topic": "JDBC",
+    "slip": "Slip 15",
+    "name": "StudentForm.java",
+    "q": "Accept details of Student and store into database. (Use Swing Components)",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Creates JFrame UI and saves properties using <code>PreparedStatement</code> inside action listener.",
+    "code": "import java.sql.*; import javax.swing.*; import java.awt.*; import java.awt.event.*;\n\npublic class StudentForm extends JFrame implements ActionListener {\n  JTextField tfRno=new JTextField(10), tfName=new JTextField(15), tfPer=new JTextField(10);\n  JRadioButton rbMale=new JRadioButton(\"Male\"), rbFemale=new JRadioButton(\"Female\");\n  JComboBox<String> cbClass=new JComboBox<>(new String[]{\"FY\",\"SY\",\"TY\"});\n  JButton btnSave=new JButton(\"Save to DB\");\n\n  public StudentForm() {\n    setLayout(new GridLayout(6,2,5,5));\n    add(new JLabel(\"Roll No:\")); add(tfRno);\n    add(new JLabel(\"Name:\"));   add(tfName);\n    add(new JLabel(\"Per%:\"));   add(tfPer);\n    ButtonGroup bg=new ButtonGroup(); bg.add(rbMale); bg.add(rbFemale);\n    add(new JLabel(\"Gender:\")); JPanel gp=new JPanel(); gp.add(rbMale); gp.add(rbFemale); add(gp);\n    add(new JLabel(\"Class:\"));  add(cbClass);\n    add(new JLabel(\"\"));        add(btnSave);\n    btnSave.addActionListener(this);\n    setSize(350,250); setTitle(\"Student Form\"); setDefaultCloseOperation(EXIT_ON_CLOSE); setVisible(true);\n  }\n\n  public void actionPerformed(ActionEvent e) {\n    try {\n      Class.forName(\"org.postgresql.Driver\");\n      Connection con=DriverManager.getConnection(\"jdbc:postgresql://localhost:5432/college\",\"postgres\",\"postgres\");\n      PreparedStatement ps=con.prepareStatement(\"INSERT INTO student(rno,sname,per,gender,class) VALUES(?,?,?,?,?)\");\n      ps.setInt(1,Integer.parseInt(tfRno.getText()));\n      ps.setString(2,tfName.getText());\n      ps.setDouble(3,Double.parseDouble(tfPer.getText()));\n      ps.setString(4,rbMale.isSelected()?\"Male\":\"Female\");\n      ps.setString(5,cbClass.getSelectedItem().toString());\n      ps.executeUpdate(); con.close();\n      JOptionPane.showMessageDialog(this,\"Student Saved!\");\n    }catch(Exception ex){ JOptionPane.showMessageDialog(this,\"Error: \"+ex.getMessage()); }\n  }\n  public static void main(String[] a){ new StudentForm(); }\n}"
+  },
+  {
+    "id": "jdbc-16",
+    "topic": "JDBC",
+    "slip": "Slip 16",
+    "name": "HighestPer.java",
+    "q": "Store student records into database and display student with highest percentage.",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Pattern E: gets highest using <code>SELECT * FROM student ORDER BY per DESC LIMIT 1</code>.",
+    "code": "import java.sql.*; import java.util.Scanner;\n\npublic class HighestPer {\n  public static void main(String[] a) throws Exception {\n    Class.forName(\"org.postgresql.Driver\");\n    Connection con=DriverManager.getConnection(\"jdbc:postgresql://localhost:5432/college\",\"postgres\",\"postgres\");\n    Scanner sc=new Scanner(System.in);\n\n    con.createStatement().execute(\"CREATE TABLE IF NOT EXISTS student(rno INT,sname VARCHAR(50),per DOUBLE PRECISION)\");\n    PreparedStatement ps=con.prepareStatement(\"INSERT INTO student VALUES(?,?,?)\");\n\n    System.out.print(\"How many students? \"); int n=sc.nextInt(); sc.nextLine();\n    for(int i=0;i<n;i++){\n      System.out.print(\"RNo: \"); ps.setInt(1,sc.nextInt()); sc.nextLine();\n      System.out.print(\"SName: \"); ps.setString(2,sc.nextLine());\n      System.out.print(\"Per: \"); ps.setDouble(3,sc.nextDouble()); sc.nextLine();\n      ps.executeUpdate();\n    }\n\n    ResultSet rs=con.createStatement().executeQuery(\"SELECT * FROM student ORDER BY per DESC LIMIT 1\");\n    if(rs.next()) System.out.println(\"Topper: \"+rs.getString(\"sname\")+\" \"+rs.getDouble(\"per\")+\"%\");\n    con.close();\n  }\n}"
+  },
+  {
+    "id": "thr-17",
+    "topic": "Thread",
+    "slip": "Slip 17",
+    "name": "VowelDisplay.java",
+    "q": "Accept a String and display each vowel after 3 seconds.",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Look up <code>\"aeiouAEIOU\".indexOf(c)</code> to check mapping quickly.",
+    "code": "import java.util.Scanner;\n\npublic class VowelDisplay {\n  public static void main(String[] a) throws InterruptedException {\n    System.out.print(\"Enter string: \");\n    String s=new Scanner(System.in).nextLine();\n\n    for(char c:s.toCharArray()){\n      if(\"aeiouAEIOU\".indexOf(c)>=0){\n        System.out.println(c); Thread.sleep(3000);\n      }\n    }\n  }\n}"
+  },
+  {
+    "id": "sock-17-s",
+    "topic": "Socket",
+    "slip": "Slip 17",
+    "name": "FileServer.java",
+    "q": "File server. Check if file exists, output contents or not found.",
+    "explanation": "<strong>Tips from docs:</strong> ☛ File existence check. Uses Socket IO DataInputStream and Output Streams.",
+    "code": "import java.net.*; import java.io.*; import java.util.Scanner;\n\npublic class FileServer {\n  public static void main(String[] a) throws Exception {\n    ServerSocket ss=new ServerSocket(6000); Socket s=ss.accept();\n    DataInputStream dis=new DataInputStream(s.getInputStream());\n    DataOutputStream dos=new DataOutputStream(s.getOutputStream());\n\n    String fname=dis.readUTF();                       // receive filename\n    File f=new File(fname);\n\n    if(f.exists()){\n      Scanner sc=new Scanner(f); StringBuilder sb=new StringBuilder();\n      while(sc.hasNextLine()) sb.append(sc.nextLine()+\"\\n\");\n      dos.writeUTF(sb.toString());\n    } else {\n      dos.writeUTF(\"File Not Found\");\n    }\n    s.close(); ss.close();\n  }\n}"
+  },
+  {
+    "id": "sock-17-c",
+    "topic": "Socket",
+    "slip": "Slip 17",
+    "name": "FileClient.java",
+    "q": "Request file from server terminal.",
+    "code": "import java.net.*; import java.io.*; import java.util.Scanner;\n\npublic class FileClient {\n  public static void main(String[] a) throws Exception {\n    Socket s=new Socket(\"localhost\",6000);\n    DataOutputStream dos=new DataOutputStream(s.getOutputStream());\n    DataInputStream dis=new DataInputStream(s.getInputStream());\n\n    System.out.print(\"Enter filename: \"); dos.writeUTF(new Scanner(System.in).next());\n    System.out.println(dis.readUTF());\n    s.close();\n  }\n}"
+  },
+  {
+    "id": "thr-18",
+    "topic": "Thread",
+    "slip": "Slip 18",
+    "name": "Factorial.java",
+    "q": "Factorial using sleep method.",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Pause for 500ms after calculating each loop step.",
+    "code": "import java.util.Scanner;\n\npublic class Factorial {\n  public static void main(String[] a) throws InterruptedException {\n    System.out.print(\"Enter n: \"); int n=new Scanner(System.in).nextInt();\n    long fact=1;\n\n    for(int i=1;i<=n;i++){\n      fact*=i;\n      System.out.println(i+\"! = \"+fact);\n      Thread.sleep(500);\n    }\n    System.out.println(\"\\nFactorial of \"+n+\" = \"+fact);\n  }\n}"
+  },
+  {
+    "id": "jdbc-19",
+    "topic": "JDBC",
+    "slip": "Slip 19",
+    "name": "FirstRecord.java",
+    "q": "Display first student record on TextFields via Swing.",
+    "explanation": "<strong>Tips from docs:</strong> ☛ <code>SELECT * FROM student LIMIT 1</code> safely picks top record to display.",
+    "code": "import java.sql.*; import javax.swing.*; import java.awt.*; import java.awt.event.*;\n\npublic class FirstRecord extends JFrame implements ActionListener {\n  JTextField tfRno=new JTextField(10),tfName=new JTextField(15),tfPer=new JTextField(10);\n  JButton btn=new JButton(\"Load First Record\");\n\n  public FirstRecord() {\n    setLayout(new GridLayout(4,2,5,5));\n    add(new JLabel(\"Roll No:\")); add(tfRno);\n    add(new JLabel(\"Name:\"));   add(tfName);\n    add(new JLabel(\"Per%:\"));   add(tfPer);\n    add(new JLabel(\"\")); add(btn);\n    btn.addActionListener(this); setSize(350,200); setTitle(\"Student Record\"); setDefaultCloseOperation(EXIT_ON_CLOSE); setVisible(true);\n  }\n\n  public void actionPerformed(ActionEvent e){\n    try{\n      Class.forName(\"org.postgresql.Driver\");\n      Connection con=DriverManager.getConnection(\"jdbc:postgresql://localhost:5432/college\",\"postgres\",\"postgres\");\n      ResultSet rs=con.createStatement().executeQuery(\"SELECT * FROM student LIMIT 1\");\n      if(rs.next()){ tfRno.setText(rs.getString(\"rno\")); tfName.setText(rs.getString(\"sname\")); tfPer.setText(rs.getString(\"per\")); }\n      con.close();\n    }catch(Exception ex){ JOptionPane.showMessageDialog(this,\"Error: \"+ex.getMessage()); }\n  }\n  public static void main(String[] a){ new FirstRecord(); }\n}"
+  },
+  {
+    "id": "serv-21",
+    "topic": "Servlet",
+    "slip": "Slip 21",
+    "name": "GradeServlet.java",
+    "q": "Calculate percentage and grade based on Details",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Demonstrates form generation within <code>doGet</code> and grading logic in <code>doPost</code>.",
+    "code": "import java.io.*; import javax.servlet.*; import javax.servlet.http.*; import javax.servlet.annotation.WebServlet;\n\n@WebServlet(\"/grade\")\npublic class GradeServlet extends HttpServlet {\n  protected void doGet(HttpServletRequest req, HttpServletResponse res) throws Exception {\n    res.getWriter().println(\"<form method='post'>Seat No:<input name='seat'/>Name:<input name='name'/>Class:<input name='cls'/>Total Marks:<input name='marks'/><input type='submit' value='Submit'/></form>\");\n  }\n\n  protected void doPost(HttpServletRequest req, HttpServletResponse res) throws Exception {\n    res.setContentType(\"text/html\"); PrintWriter out=res.getWriter();\n    String seat=req.getParameter(\"seat\"),name=req.getParameter(\"name\"),cls=req.getParameter(\"cls\");\n    double total=Double.parseDouble(req.getParameter(\"marks\"));\n    double per=total/5;     // assuming 5 subjects\n    String grade=per>=75?\"A\":per>=60?\"B\":per>=50?\"C\":per>=40?\"D\":\"F\";\n    \n    out.println(\"<h2>Seat: \"+seat+\" | Name: \"+name+\" | Class: \"+cls+\"</h2>\");\n    out.println(\"<h2>Percentage: \"+per+\"% | Grade: \"+grade+\"</h2>\");\n  }\n}"
+  },
+  {
+    "id": "sock-22-s",
+    "topic": "Socket",
+    "slip": "Slip 22",
+    "name": "DateTimeServer.java",
+    "q": "Send Date and time of Server machine",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Simply transmits <code>new java.util.Date()</code> via the data stream payload.",
+    "code": "import java.net.*; import java.io.*;\n\npublic class DateTimeServer {\n  public static void main(String[] a) throws Exception {\n    ServerSocket ss=new ServerSocket(6000); Socket s=ss.accept();\n    DataOutputStream dos=new DataOutputStream(s.getOutputStream());\n    dos.writeUTF(\"Server Date & Time: \"+new java.util.Date());\n    s.close(); ss.close();\n  }\n}"
+  },
+  {
+    "id": "sock-22-c",
+    "topic": "Socket",
+    "slip": "Slip 22",
+    "name": "DateTimeClient.java",
+    "q": "Client receiving Server Time.",
+    "code": "import java.net.*; import java.io.*;\n\npublic class DateTimeClient {\n  public static void main(String[] a) throws Exception {\n    Socket s=new Socket(\"localhost\",6000);\n    DataInputStream dis=new DataInputStream(s.getInputStream());\n    System.out.println(dis.readUTF());\n    s.close();\n  }\n}"
+  },
+  {
+    "id": "jsp-22-h",
+    "topic": "JSP",
+    "slip": "Slip 22",
+    "name": "account.html",
+    "q": "Account HTML Form",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Accept Account detail to process on JSP page.",
+    "code": "<form action=\"account.jsp\" method=\"post\">\n  ANo: <input type=\"text\" name=\"ano\"/>\n  Type: <input type=\"text\" name=\"type\"/>\n  Balance: <input type=\"text\" name=\"bal\"/>\n  <input type=\"submit\" value=\"Submit\"/>\n</form>"
+  },
+  {
+    "id": "jsp-22-j",
+    "topic": "JSP",
+    "slip": "Slip 22",
+    "name": "account.jsp",
+    "q": "Account Database Process",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Implements database inline to both <code>INSERT</code> input values, then <code>SELECT</code> them automatically.",
+    "code": "<%@ page import=\"java.sql.*\" %>\n<%@ page import=\"java.sql.*\" %>\n<%\n  String ano=request.getParameter(\"ano\"), type=request.getParameter(\"type\");\n  double bal=Double.parseDouble(request.getParameter(\"bal\"));\n\n  Class.forName(\"org.postgresql.Driver\");\n  Connection con=DriverManager.getConnection(\"jdbc:postgresql://localhost:5432/college\",\"postgres\",\"postgres\");\n\n  PreparedStatement ps=con.prepareStatement(\"INSERT INTO Account VALUES(?,?,?)\");\n  ps.setString(1,ano); ps.setString(2,type); ps.setDouble(3,bal); ps.executeUpdate();\n\n  ResultSet rs=con.createStatement().executeQuery(\"SELECT * FROM Account\");\n%>\n<table border=\"1\"><tr><th>ANo</th><th>Type</th><th>Balance</th></tr>\n<% while(rs.next()){ %>\n  <tr><td><%=rs.getString(1)%></td><td><%=rs.getString(2)%></td><td><%=rs.getDouble(3)%></td></tr>\n<% } con.close(); %></table>"
+  },
+  {
+    "id": "jdbc-23",
+    "topic": "JDBC",
+    "slip": "Slip 23",
+    "name": "CollegeJTable.java",
+    "q": "Display College details on JTable",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Pours a JDBC ResultSet into a nested <code>Vector</code> to populate <code>DefaultTableModel</code>.",
+    "code": "import java.sql.*; import java.util.*; import javax.swing.*; import javax.swing.table.*;\n\npublic class CollegeJTable extends JFrame {\n  public CollegeJTable() throws Exception {\n    String[] cols={\"CID\",\"CName\",\"Address\",\"Year\"};\n    Vector<Vector<Object>> data=new Vector<>();\n\n    Class.forName(\"org.postgresql.Driver\");\n    Connection con=DriverManager.getConnection(\"jdbc:postgresql://localhost:5432/college\",\"postgres\",\"postgres\");\n    ResultSet rs=con.createStatement().executeQuery(\"SELECT * FROM College\");\n\n    while(rs.next()){\n      Vector<Object> row=new Vector<>();\n      row.add(rs.getInt(1)); row.add(rs.getString(2)); row.add(rs.getString(3)); row.add(rs.getInt(4));\n      data.add(row);\n    }\n    con.close();\n\n    JTable table=new JTable(new DefaultTableModel(data,new Vector<>(Arrays.asList(cols))));\n    add(new JScrollPane(table)); setSize(500,300); setTitle(\"College Details\"); setDefaultCloseOperation(EXIT_ON_CLOSE); setVisible(true);\n  }\n  public static void main(String[] a) throws Exception{ new CollegeJTable(); }\n}"
+  },
+  {
+    "id": "jsp-24-h",
+    "topic": "JSP",
+    "slip": "Slip 24",
+    "name": "words.html",
+    "q": "Accept a number and display it in words",
+    "code": "<form action=\"words.jsp\" method=\"post\">\n  Number: <input type=\"text\" name=\"num\"/>  <input type=\"submit\" value=\"Convert\"/>\n</form>"
+  },
+  {
+    "id": "jsp-24-j",
+    "topic": "JSP",
+    "slip": "Slip 24",
+    "name": "words.jsp",
+    "q": "Translate numbers to words mapped by string array",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Fast array mapping using <code>ones[c-'0']</code> index tricks.",
+    "code": "<%! String[] ones={\"\",\"One\",\"Two\",\"Three\",\"Four\",\"Five\",\"Six\",\"Seven\",\"Eight\",\"Nine\"}; %>\n<%\n  String s=request.getParameter(\"num\");\n  StringBuilder words=new StringBuilder();\n  for(char c:s.toCharArray()) words.append(ones[c-'0']+\" \");\n%>\n<html><body>\n  <p style=\"color:red; font-size:18px;\"><%=s%> = <%=words.toString().trim()%></p>\n</body></html>"
+  },
+  {
+    "id": "jdbc-24",
+    "topic": "JDBC",
+    "slip": "Slip 24",
+    "name": "MenuCRUD.java",
+    "q": "Menu-driven program for database operations",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Giant loop showing off all operations (Insert, Update, Delete, Display).",
+    "code": "import java.sql.*; import java.util.Scanner;\n\npublic class MenuCRUD {\n  public static void main(String[] a) throws Exception {\n    Class.forName(\"org.postgresql.Driver\");\n    Connection con=DriverManager.getConnection(\"jdbc:postgresql://localhost:5432/college\",\"postgres\",\"postgres\");\n    Scanner sc=new Scanner(System.in);\n\n    while(true){\n      System.out.println(\"1.Insert 2.Update 3.Delete 4.Search 5.Display 6.Exit\");\n      int ch=sc.nextInt(); sc.nextLine();\n      \n      if(ch==1){\n        PreparedStatement ps=con.prepareStatement(\"INSERT INTO Emp(ENo,EName,Salary,Desg) VALUES(?,?,?,?)\");\n        System.out.print(\"ENo: \"); ps.setInt(1,sc.nextInt()); sc.nextLine();\n        System.out.print(\"EName: \"); ps.setString(2,sc.nextLine());\n        System.out.print(\"Salary: \"); ps.setDouble(3,sc.nextDouble()); sc.nextLine();\n        System.out.print(\"Desg: \"); ps.setString(4,sc.nextLine());\n        ps.executeUpdate(); System.out.println(\"Inserted!\");\n      } else if(ch==2){\n        PreparedStatement ps=con.prepareStatement(\"UPDATE Emp SET Salary=? WHERE ENo=?\");\n        System.out.print(\"New Salary: \"); ps.setDouble(1,sc.nextDouble());\n        System.out.print(\"ENo: \"); ps.setInt(2,sc.nextInt()); sc.nextLine();\n        ps.executeUpdate(); System.out.println(\"Updated!\");\n      } else if(ch==3){\n        PreparedStatement ps=con.prepareStatement(\"DELETE FROM Emp WHERE ENo=?\");\n        System.out.print(\"ENo: \"); ps.setInt(1,sc.nextInt()); sc.nextLine();\n        System.out.println(ps.executeUpdate()>0?\"Deleted!\":\"Not found.\");\n      } else if(ch==4){\n        PreparedStatement ps=con.prepareStatement(\"SELECT * FROM Emp WHERE ENo=?\");\n        System.out.print(\"ENo: \"); ps.setInt(1,sc.nextInt()); sc.nextLine();\n        ResultSet rs=ps.executeQuery();\n        if(rs.next()) System.out.println(rs.getInt(1)+\" \"+rs.getString(2)+\" \"+rs.getDouble(3)+\" \"+rs.getString(4));\n        else System.out.println(\"Not found.\");\n      } else if(ch==5){\n        ResultSet rs=con.createStatement().executeQuery(\"SELECT * FROM Emp\");\n        while(rs.next()) System.out.println(rs.getInt(1)+\" | \"+rs.getString(2)+\" | \"+rs.getDouble(3)+\" | \"+rs.getString(4));\n      } else break;\n    }\n    con.close();\n  }\n}"
+  },
+  {
+    "id": "sock-25-s",
+    "topic": "Socket",
+    "slip": "Slip 25",
+    "name": "FactorServer.java",
+    "q": "Receive number from Client, Find factors and transmit.",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Reads integer payload over data streams via <code>readInt()</code> and figures factorization loop modulo operator logic.",
+    "code": "import java.net.*; import java.io.*;\n\npublic class FactorServer {\n  public static void main(String[] a) throws Exception {\n    ServerSocket ss=new ServerSocket(6000); Socket s=ss.accept();\n    DataInputStream dis=new DataInputStream(s.getInputStream());\n    DataOutputStream dos=new DataOutputStream(s.getOutputStream());\n\n    int num=dis.readInt();\n    StringBuilder sb=new StringBuilder(\"Factors of \"+num+\": \");\n    for(int i=1;i<=num;i++) if(num%i==0) sb.append(i+\" \");\n    dos.writeUTF(sb.toString());\n\n    s.close(); ss.close();\n  }\n}"
+  },
+  {
+    "id": "sock-25-c",
+    "topic": "Socket",
+    "slip": "Slip 25",
+    "name": "FactorClient.java",
+    "q": "Send Integer on Socket stream",
+    "code": "import java.net.*; import java.io.*; import java.util.Scanner;\n\npublic class FactorClient {\n  public static void main(String[] a) throws Exception {\n    Socket s=new Socket(\"localhost\",6000);\n    DataOutputStream dos=new DataOutputStream(s.getOutputStream());\n    DataInputStream dis=new DataInputStream(s.getInputStream());\n\n    System.out.print(\"Enter number: \"); dos.writeInt(new Scanner(System.in).nextInt());\n    System.out.println(dis.readUTF());\n    s.close();\n  }\n}"
+  },
+  {
+    "id": "jdbc-25",
+    "topic": "JDBC",
+    "slip": "Slip 25",
+    "name": "DDLDemo.java",
+    "q": "Write a Java Program for DDL operations via GUI Text Fields.",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Reads raw Query structure and invokes <code>con.createStatement().execute()</code> directly.",
+    "code": "import java.sql.*; import javax.swing.*; import java.awt.*; import java.awt.event.*;\n\npublic class DDLDemo extends JFrame implements ActionListener {\n  JTextField tfQuery=new JTextField(30);\n  JButton btnCreate=new JButton(\"Create Table\"), btnAlter=new JButton(\"Alter Table\"), btnDrop=new JButton(\"Drop Table\");\n  JLabel lblResult=new JLabel(\"Result will appear here\");\n  Connection con;\n\n  public DDLDemo() throws Exception {\n    Class.forName(\"org.postgresql.Driver\");\n    con=DriverManager.getConnection(\"jdbc:postgresql://localhost:5432/college\",\"postgres\",\"postgres\");\n    setLayout(new FlowLayout());\n    add(new JLabel(\"Type Your DDL Query Here:\")); add(tfQuery);\n    add(btnCreate); add(btnAlter); add(btnDrop); add(lblResult);\n    btnCreate.addActionListener(this); btnAlter.addActionListener(this); btnDrop.addActionListener(this);\n    setSize(550,200); setTitle(\"DDL Demo\"); setDefaultCloseOperation(EXIT_ON_CLOSE); setVisible(true);\n  }\n\n  public void actionPerformed(ActionEvent e){\n    try{\n      String sql=tfQuery.getText(); con.createStatement().execute(sql);\n      lblResult.setText(\"Success: \"+e.getActionCommand());\n    }catch(Exception ex){ lblResult.setText(\"Error: \"+ex.getMessage()); }\n  }\n  public static void main(String[] a) throws Exception{ new DDLDemo(); }\n}"
+  },
+  {
+    "id": "jdbc-26",
+    "topic": "JDBC",
+    "slip": "Slip 26",
+    "name": "CollegeNames.java",
+    "q": "Display list of college names natively",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Pattern A: <code>SELECT CName FROM College</code> query and while print loop.",
+    "code": "import java.sql.*;\n\npublic class CollegeNames {\n  public static void main(String[] a) throws Exception {\n    Class.forName(\"org.postgresql.Driver\");\n    Connection con=DriverManager.getConnection(\"jdbc:postgresql://localhost:5432/college\",\"postgres\",\"postgres\");\n    \n    ResultSet rs=con.createStatement().executeQuery(\"SELECT CName FROM College\");\n    while(rs.next()) System.out.println(rs.getString(\"CName\"));\n    \n    con.close();\n  }\n}"
+  },
+  {
+    "id": "serv-26",
+    "topic": "Servlet",
+    "slip": "Slip 26",
+    "name": "HobbyServlet.java",
+    "q": "Hobby Cookie Servlet",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Checks logic loops over cookies matching name before generating a new cookie class token state.",
+    "code": "import java.io.*; import javax.servlet.*; import javax.servlet.http.*; import javax.servlet.annotation.WebServlet;\n\n@WebServlet(\"/hobby\")\npublic class HobbyServlet extends HttpServlet {\n  protected void doGet(HttpServletRequest req, HttpServletResponse res) throws Exception {\n    res.getWriter().println(\"<html><body><form method='post'>Select Hobby:<br>\"+\n      \"<input type='radio' name='hobby' value='Painting'> Painting<br>\"+\n      \"<input type='radio' name='hobby' value='Drawing'> Drawing<br>\"+\n      \"<input type='radio' name='hobby' value='Singing'> Singing<br>\"+\n      \"<input type='radio' name='hobby' value='Swimming'> Swimming<br>\"+\n      \"<input type='reset' value='Reset'>\"+\n      \"<input type='submit' value='Submit'>\"+\n      \"</form></body></html>\");\n  }\n\n  protected void doPost(HttpServletRequest req, HttpServletResponse res) throws Exception {\n    res.setContentType(\"text/html\"); PrintWriter out=res.getWriter();\n    String hobby=req.getParameter(\"hobby\");\n    Cookie[] cookies=req.getCookies(); boolean exists=false;\n\n    if(cookies!=null) for(Cookie c:cookies) if(c.getName().equals(\"hobby\")&&c.getValue().equals(hobby)) exists=true;\n\n    if(!exists){\n      Cookie c=new Cookie(\"hobby\",hobby); c.setMaxAge(86400); res.addCookie(c);\n      out.println(\"<h2 style='color:green'>Hobby '\"+hobby+\"' saved!</h2>\");\n    } else out.println(\"<h2 style='color:red'>Duplicate! Hobby already saved.</h2>\");\n  }\n}"
+  },
+  {
+    "id": "jsp-27-h",
+    "topic": "JSP",
+    "slip": "Slip 27",
+    "name": "teacher.html",
+    "q": "Teacher Layout Structure via HTML File.",
+    "code": "<form action=\"teacher.jsp\" method=\"post\">\n  TID: <input type=\"text\" name=\"tid\"/><br>\n  TName: <input type=\"text\" name=\"tname\"/><br>\n  Designation: <input type=\"text\" name=\"desg\"/><br>\n  Subject: <input type=\"text\" name=\"subject\"/><br>\n  Qualification: <input type=\"text\" name=\"qual\"/><br>\n  <input type=\"submit\" value=\"Display\"/>\n</form>"
+  },
+  {
+    "id": "jsp-27-j",
+    "topic": "JSP",
+    "slip": "Slip 27",
+    "name": "teacher.jsp",
+    "q": "Get multiple parameters layout.",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Form fetching parameters individually to format within tabular HTML display element layout.",
+    "code": "<%\n  String tid=request.getParameter(\"tid\"),tname=request.getParameter(\"tname\");\n  String desg=request.getParameter(\"desg\"),sub=request.getParameter(\"subject\"),qual=request.getParameter(\"qual\");\n%>\n<html><body><h2>Teacher Details</h2>\n<table border=\"1\">\n<tr><th>TID</th><th>TName</th><th>Designation</th><th>Subject</th><th>Qualification</th></tr>\n<tr><td><%=tid%></td><td><%=tname%></td><td><%=desg%></td><td><%=sub%></td><td><%=qual%></td></tr>\n</table></body></html>"
+  },
+  {
+    "id": "thr-28",
+    "topic": "Thread",
+    "slip": "Slip 28",
+    "name": "SyncDemo.java",
+    "q": "Java thread synchronization implementation.",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Shows <code>synchronized</code> keyword applied to <code>increment()</code> ensuring threads dont overwrite variable context operations.",
+    "code": "public class SyncDemo {\n  static class Counter {\n    int count=0;\n    synchronized void increment(){ count++; }\n  }\n\n  public static void main(String[] a) throws Exception {\n    Counter c=new Counter();\n    Thread t1=new Thread(()->{ for(int i=0;i<1000;i++) c.increment(); });\n    Thread t2=new Thread(()->{ for(int i=0;i<1000;i++) c.increment(); });\n\n    t1.start(); t2.start(); t1.join(); t2.join();\n    System.out.println(\"Count: \"+c.count);  // always 2000 with sync, less without\n  }\n}"
+  },
+  {
+    "id": "jdbc-28",
+    "topic": "JDBC",
+    "slip": "Slip 28",
+    "name": "EmpChoice.java",
+    "q": "Choice component fetching Table Rows",
+    "explanation": "<strong>Tips from docs:</strong> ☛ Registers ItemListener callback on <code>Choice</code> swing class. Refreshes JTable using <code>model.setRowCount(0)</code> when re-evaluating.",
+    "code": "import java.sql.*; import java.util.*; import javax.swing.*; import javax.swing.table.*;\nimport java.awt.*; import java.awt.event.*;\n\npublic class EmpChoice extends JFrame implements ItemListener {\n  Choice choice=new Choice();\n  JTable table; DefaultTableModel model;\n  String[] cols={\"ENo\",\"EName\",\"Salary\"};\n  Connection con;\n\n  public EmpChoice() throws Exception {\n    Class.forName(\"org.postgresql.Driver\");\n    con=DriverManager.getConnection(\"jdbc:postgresql://localhost:5432/college\",\"postgres\",\"postgres\");\n    choice.add(\"-- Select EmpNo --\");\n    ResultSet rs=con.createStatement().executeQuery(\"SELECT ENo FROM Emp\");\n    while(rs.next()) choice.add(rs.getString(\"ENo\"));\n    choice.addItemListener(this);\n\n    model=new DefaultTableModel(new Vector<>(),new Vector<>(Arrays.asList(cols)));\n    table=new JTable(model);\n    JPanel top=new JPanel(); top.add(new JLabel(\"Select Emp No:\")); top.add(choice);\n    \n    add(top,BorderLayout.NORTH); add(new JScrollPane(table),BorderLayout.CENTER);\n    setSize(450,300); setTitle(\"Emp Details\"); setDefaultCloseOperation(EXIT_ON_CLOSE); setVisible(true);\n  }\n\n  public void itemStateChanged(ItemEvent e){\n    try{\n      String eno=choice.getSelectedItem();\n      PreparedStatement ps=con.prepareStatement(\"SELECT * FROM Emp WHERE ENo=?\");\n      ps.setString(1,eno); ResultSet rs=ps.executeQuery();\n      model.setRowCount(0);\n      if(rs.next()) model.addRow(new Object[]{rs.getInt(\"ENo\"),rs.getString(\"EName\"),rs.getDouble(\"Sal\")});\n    }catch(Exception ex){ ex.printStackTrace(); }\n  }\n  public static void main(String[] a) throws Exception{ new EmpChoice(); }\n}"
+  },
+  {
+    "id": "thr-29",
+    "topic": "Thread",
+    "slip": "Slip 29",
+    "name": "OddPrime.java",
+    "q": "Odd numbers and Prime numbers between 1 to n (parallel)",
+    "code": "public class OddPrime {\n  static boolean isPrime(int n){ if(n<2)return false; for(int i=2;i*i<=n;i++) if(n%i==0)return false; return true; }\n\n  public static void main(String[] a) throws Exception {\n    int n=20;\n    Thread odd  =new Thread(()->{ StringBuilder sb=new StringBuilder(\"Odd:   \"); for(int i=1;i<=n;i+=2)sb.append(i+\" \");  System.out.println(sb); });\n    Thread prime=new Thread(()->{ StringBuilder sb=new StringBuilder(\"Prime: \"); for(int i=2;i<=n;i++) if(isPrime(i))sb.append(i+\" \"); System.out.println(sb); });\n\n    odd.start(); prime.start(); odd.join(); prime.join();\n  }\n}"
+  },
+  {
+    "id": "and-4a",
+    "topic": "Android Intent",
+    "slip": "Slip 4",
+    "name": "MainActivity.java",
+    "q": "Read Student Details (Name, Surname, Class, Gender, Hobbies, Marks) and display in table format in another activity",
+    "explanation": "<strong>Q2A [15M]:</strong> Uses putExtra() to pass student data to DetailActivity. DetailActivity uses TableLayout to display.",
+    "code": "public class MainActivity extends AppCompatActivity {\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_main);\n    EditText etName=findViewById(R.id.etName), etSurname=findViewById(R.id.etSurname);\n    EditText etClass=findViewById(R.id.etClass), etMarks=findViewById(R.id.etMarks);\n    RadioGroup rgGender=findViewById(R.id.rgGender);\n    CheckBox cbReading=findViewById(R.id.cbReading), cbSports=findViewById(R.id.cbSports);\n    Button btnSubmit=findViewById(R.id.btnSubmit);\n\n    btnSubmit.setOnClickListener(v->{\n      String gender=((RadioButton)findViewById(rgGender.getCheckedRadioButtonId())).getText().toString();\n      StringBuilder hobbies=new StringBuilder();\n      if(cbReading.isChecked()) hobbies.append(\"Reading \");\n      if(cbSports.isChecked()) hobbies.append(\"Sports \");\n\n      Intent intent=new Intent(this,DetailActivity.class);\n      intent.putExtra(\"name\",etName.getText().toString());\n      intent.putExtra(\"surname\",etSurname.getText().toString());\n      intent.putExtra(\"class\",etClass.getText().toString());\n      intent.putExtra(\"gender\",gender);\n      intent.putExtra(\"hobbies\",hobbies.toString());\n      intent.putExtra(\"marks\",etMarks.getText().toString());\n      startActivity(intent);\n    });\n  }\n}"
+  },
+  {
+    "id": "and-4b",
+    "topic": "Google Maps",
+    "slip": "Slip 4",
+    "name": "MapsActivity.java",
+    "q": "Display satellite view of current location using Google Map",
+    "explanation": "<strong>Q2B [25M]:</strong> Uses GoogleMap.MAP_TYPE_SATELLITE. Add API key in AndroidManifest.xml.",
+    "code": "import com.google.android.gms.maps.*; import com.google.android.gms.maps.model.*;\nimport androidx.fragment.app.FragmentActivity;\n\npublic class MapsActivity extends FragmentActivity implements OnMapReadyCallback {\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_maps);\n    SupportMapFragment mapFragment=(SupportMapFragment)getSupportFragmentManager().findFragmentById(R.id.map);\n    mapFragment.getMapAsync(this);\n  }\n  @Override public void onMapReady(GoogleMap gMap) {\n    gMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);\n    LatLng loc=new LatLng(18.5204,73.8567);  // Pune\n    gMap.addMarker(new MarkerOptions().position(loc).title(\"Current Location\"));\n    gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(loc,15));\n  }\n}"
+  },
+  {
+    "id": "and-7a",
+    "topic": "Android Intent",
+    "slip": "Slip 7",
+    "name": "MainActivity.java",
+    "q": "Accept two numbers, find power and average, display result on next activity",
+    "explanation": "<strong>Q2A [15M]:</strong> Math.pow(a,b) for power, (a+b)/2.0 for average. Pass via Intent putExtra.",
+    "code": "public class MainActivity extends AppCompatActivity {\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_main);\n    EditText et1=findViewById(R.id.et1), et2=findViewById(R.id.et2);\n    Button btn=findViewById(R.id.btnCalc);\n    btn.setOnClickListener(v->{\n      double a=Double.parseDouble(et1.getText().toString());\n      double b2=Double.parseDouble(et2.getText().toString());\n      Intent i=new Intent(this,ResultActivity.class);\n      i.putExtra(\"power\",Math.pow(a,b2));\n      i.putExtra(\"avg\",(a+b2)/2.0);\n      startActivity(i);\n    });\n  }\n}"
+  },
+  {
+    "id": "and-7b",
+    "topic": "Android SQLite",
+    "slip": "Slip 7",
+    "name": "DBHelper.java",
+    "q": "Customer (id, name, address, phno) — Insert + Show All (SQLite)",
+    "explanation": "<strong>Q2B [25M]:</strong> SQLiteOpenHelper with Customer table. Insert via ContentValues, query via rawQuery.",
+    "code": "import android.content.ContentValues; import android.content.Context;\nimport android.database.Cursor; import android.database.sqlite.*;\n\npublic class DBHelper extends SQLiteOpenHelper {\n  public DBHelper(Context c){ super(c,\"CustomerDB\",null,1); }\n  @Override public void onCreate(SQLiteDatabase db){\n    db.execSQL(\"CREATE TABLE Customer(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, address TEXT, phno TEXT)\");\n  }\n  @Override public void onUpgrade(SQLiteDatabase db,int o,int n){ db.execSQL(\"DROP TABLE IF EXISTS Customer\"); onCreate(db); }\n\n  public void insertCustomer(String name, String addr, String ph){\n    ContentValues cv=new ContentValues();\n    cv.put(\"name\",name); cv.put(\"address\",addr); cv.put(\"phno\",ph);\n    getWritableDatabase().insert(\"Customer\",null,cv);\n  }\n  public Cursor getAllCustomers(){ return getReadableDatabase().rawQuery(\"SELECT * FROM Customer\",null); }\n}"
+  },
+  {
+    "id": "and-9a",
+    "topic": "Android UI",
+    "slip": "Slip 9",
+    "name": "MainActivity.java",
+    "q": "Design Table Layout form — First Name, Last Name, Address, Phone, Email, Gender. Display using Toast",
+    "explanation": "<strong>Q2A [15M]:</strong> Uses TableLayout with EditTexts and displays via Toast.makeText().",
+    "code": "public class MainActivity extends AppCompatActivity {\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_main);\n    EditText etFN=findViewById(R.id.etFN), etLN=findViewById(R.id.etLN);\n    EditText etAddr=findViewById(R.id.etAddr), etPhone=findViewById(R.id.etPhone);\n    EditText etEmail=findViewById(R.id.etEmail);\n    RadioGroup rgGender=findViewById(R.id.rgGender);\n    Button btnSubmit=findViewById(R.id.btnSubmit);\n    btnSubmit.setOnClickListener(v->{\n      String gender=((RadioButton)findViewById(rgGender.getCheckedRadioButtonId())).getText().toString();\n      String msg=\"Name: \"+etFN.getText()+\" \"+etLN.getText()+\"\\nAddr: \"+etAddr.getText()+\"\\nPhone: \"+etPhone.getText()+\"\\nEmail: \"+etEmail.getText()+\"\\nGender: \"+gender;\n      Toast.makeText(this,msg,Toast.LENGTH_LONG).show();\n    });\n  }\n}"
+  },
+  {
+    "id": "and-10a",
+    "topic": "Google Maps",
+    "slip": "Slip 10",
+    "name": "MapsActivity.java",
+    "q": "Zoom In, Zoom Out operation and display Satellite view on Google Map",
+    "explanation": "<strong>Q2A [15M]:</strong> Uses MAP_TYPE_SATELLITE and CameraUpdateFactory.newLatLngZoom().",
+    "code": "import com.google.android.gms.maps.*; import com.google.android.gms.maps.model.*;\nimport androidx.fragment.app.FragmentActivity;\n\npublic class MapsActivity extends FragmentActivity implements OnMapReadyCallback {\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_maps);\n    SupportMapFragment mapFragment=(SupportMapFragment)getSupportFragmentManager().findFragmentById(R.id.map);\n    mapFragment.getMapAsync(this);\n  }\n  @Override public void onMapReady(GoogleMap gMap) {\n    gMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);\n    LatLng pune=new LatLng(18.5204,73.8567);\n    gMap.addMarker(new MarkerOptions().position(pune).title(\"Pune\"));\n    gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(pune,15));\n    gMap.getUiSettings().setZoomControlsEnabled(true);\n  }\n}"
+  },
+  {
+    "id": "and-11a",
+    "topic": "Android UI",
+    "slip": "Slip 11",
+    "name": "MainActivity.java",
+    "q": "Demonstrate RadioButton",
+    "explanation": "<strong>Q2A [15M]:</strong> RadioGroup with RadioButtons. On selection, display selected text via Toast.",
+    "code": "public class MainActivity extends AppCompatActivity {\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_main);\n    RadioGroup rg=findViewById(R.id.radioGroup);\n    Button btn=findViewById(R.id.btnShow);\n    btn.setOnClickListener(v->{\n      int id=rg.getCheckedRadioButtonId();\n      if(id!=-1){\n        RadioButton rb=findViewById(id);\n        Toast.makeText(this,\"Selected: \"+rb.getText(),Toast.LENGTH_SHORT).show();\n      }\n    });\n  }\n}"
+  },
+  {
+    "id": "and-11b",
+    "topic": "Android UI",
+    "slip": "Slip 11",
+    "name": "ListViewActivity.java",
+    "q": "Demonstrate ListView and onClick display Toast",
+    "explanation": "<strong>Q2B [25M]:</strong> ArrayAdapter populates ListView. setOnItemClickListener shows Toast.",
+    "code": "import android.widget.*; import java.util.*;\n\npublic class MainActivity extends AppCompatActivity {\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_main);\n    ListView lv=findViewById(R.id.listView);\n    String[] items={\"Java\",\"Python\",\"C++\",\"Kotlin\",\"JavaScript\"};\n    ArrayAdapter<String> adapter=new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,items);\n    lv.setAdapter(adapter);\n    lv.setOnItemClickListener((parent,view,pos,id)->\n      Toast.makeText(this,\"Selected: \"+items[pos],Toast.LENGTH_SHORT).show());\n  }\n}"
+  },
+  {
+    "id": "and-12a",
+    "topic": "Android UI",
+    "slip": "Slip 12",
+    "name": "MainActivity.java",
+    "q": "Design screen using RadioButtons & CheckBoxes. Display selected text using Toast",
+    "explanation": "<strong>Q2A [15M]:</strong> RadioGroup for single choice, CheckBoxes for multiple. Concatenate and Toast.",
+    "code": "public class MainActivity extends AppCompatActivity {\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_main);\n    RadioGroup rg=findViewById(R.id.rgGender);\n    CheckBox cb1=findViewById(R.id.cbReading), cb2=findViewById(R.id.cbSports), cb3=findViewById(R.id.cbMusic);\n    Button btn=findViewById(R.id.btnSubmit);\n    btn.setOnClickListener(v->{\n      int id=rg.getCheckedRadioButtonId();\n      String gender=id!=-1?((RadioButton)findViewById(id)).getText().toString():\"None\";\n      StringBuilder hobbies=new StringBuilder();\n      if(cb1.isChecked()) hobbies.append(\"Reading \");\n      if(cb2.isChecked()) hobbies.append(\"Sports \");\n      if(cb3.isChecked()) hobbies.append(\"Music \");\n      Toast.makeText(this,\"Gender: \"+gender+\"\\nHobbies: \"+hobbies,Toast.LENGTH_LONG).show();\n    });\n  }\n}"
+  },
+  {
+    "id": "and-12b",
+    "topic": "Google Maps",
+    "slip": "Slip 12",
+    "name": "MapsActivity.java",
+    "q": "Search a specific location on Google Map",
+    "explanation": "<strong>Q2B [25M]:</strong> Uses Geocoder to search location by name and place marker.",
+    "code": "import com.google.android.gms.maps.*; import com.google.android.gms.maps.model.*;\nimport android.location.*; import java.util.*;\n\npublic class MapsActivity extends FragmentActivity implements OnMapReadyCallback {\n  GoogleMap mMap; EditText etSearch;\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_maps);\n    etSearch=findViewById(R.id.etSearch);\n    findViewById(R.id.btnSearch).setOnClickListener(v->searchLocation());\n    ((SupportMapFragment)getSupportFragmentManager().findFragmentById(R.id.map)).getMapAsync(this);\n  }\n  @Override public void onMapReady(GoogleMap g){ mMap=g; }\n  void searchLocation(){\n    try{\n      List<Address> list=new Geocoder(this).getFromLocationName(etSearch.getText().toString(),1);\n      if(!list.isEmpty()){\n        Address a=list.get(0);\n        LatLng ll=new LatLng(a.getLatitude(),a.getLongitude());\n        mMap.clear();\n        mMap.addMarker(new MarkerOptions().position(ll).title(a.getLocality()));\n        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(ll,12));\n      }\n    }catch(Exception e){ e.printStackTrace(); }\n  }\n}"
+  },
+  {
+    "id": "and-13a",
+    "topic": "Android UI",
+    "slip": "Slip 13",
+    "name": "LoginActivity.java",
+    "q": "Login Screen — on successful login go to next Activity (without DB, use TableLayout)",
+    "explanation": "<strong>Q2A [15M]:</strong> Hardcoded credentials check. Uses TableLayout for form.",
+    "code": "public class MainActivity extends AppCompatActivity {\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_main);\n    EditText etUser=findViewById(R.id.etUser), etPass=findViewById(R.id.etPass);\n    Button btnLogin=findViewById(R.id.btnLogin);\n    btnLogin.setOnClickListener(v->{\n      String user=etUser.getText().toString(), pass=etPass.getText().toString();\n      if(user.equals(\"admin\") && pass.equals(\"1234\")){\n        Toast.makeText(this,\"Login Successful!\",Toast.LENGTH_SHORT).show();\n        startActivity(new Intent(this,WelcomeActivity.class));\n      } else {\n        Toast.makeText(this,\"Invalid credentials!\",Toast.LENGTH_SHORT).show();\n      }\n    });\n  }\n}"
+  },
+  {
+    "id": "and-13b",
+    "topic": "Android SQLite",
+    "slip": "Slip 13",
+    "name": "StudentDBHelper.java",
+    "q": "Student (Sid auto-increment, Sname, phno) — Add + Delete (SQLite)",
+    "explanation": "<strong>Q2B [25M]:</strong> Sid uses AUTOINCREMENT. Delete by Sid.",
+    "code": "import android.content.ContentValues; import android.content.Context;\nimport android.database.Cursor; import android.database.sqlite.*;\n\npublic class StudentDBHelper extends SQLiteOpenHelper {\n  public StudentDBHelper(Context c){ super(c,\"StudentDB\",null,1); }\n  @Override public void onCreate(SQLiteDatabase db){\n    db.execSQL(\"CREATE TABLE Student(Sid INTEGER PRIMARY KEY AUTOINCREMENT, Sname TEXT, phno TEXT)\");\n  }\n  @Override public void onUpgrade(SQLiteDatabase db,int o,int n){ db.execSQL(\"DROP TABLE IF EXISTS Student\"); onCreate(db); }\n\n  public void addStudent(String name,String ph){\n    ContentValues cv=new ContentValues();\n    cv.put(\"Sname\",name); cv.put(\"phno\",ph);\n    getWritableDatabase().insert(\"Student\",null,cv);\n  }\n  public void deleteStudent(int sid){ getWritableDatabase().delete(\"Student\",\"Sid=?\",new String[]{String.valueOf(sid)}); }\n  public Cursor getAll(){ return getReadableDatabase().rawQuery(\"SELECT * FROM Student\",null); }\n}"
+  },
+  {
+    "id": "and-14a",
+    "topic": "Android Intent",
+    "slip": "Slip 14",
+    "name": "EmailActivity.java",
+    "q": "Send email with attachment (Implicit Intent)",
+    "explanation": "<strong>Q2A [15M]:</strong> Uses ACTION_SEND, MIME type message/rfc822.",
+    "code": "public class MainActivity extends AppCompatActivity {\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_main);\n    EditText etTo=findViewById(R.id.etTo), etSubject=findViewById(R.id.etSubject), etBody=findViewById(R.id.etBody);\n    Button btnSend=findViewById(R.id.btnSend);\n    btnSend.setOnClickListener(v->{\n      Intent intent=new Intent(Intent.ACTION_SEND);\n      intent.setType(\"message/rfc822\");\n      intent.putExtra(Intent.EXTRA_EMAIL,new String[]{etTo.getText().toString()});\n      intent.putExtra(Intent.EXTRA_SUBJECT,etSubject.getText().toString());\n      intent.putExtra(Intent.EXTRA_TEXT,etBody.getText().toString());\n      startActivity(Intent.createChooser(intent,\"Send Email\"));\n    });\n  }\n}"
+  },
+  {
+    "id": "and-15b",
+    "topic": "Google Maps",
+    "slip": "Slip 15",
+    "name": "MapsActivity.java",
+    "q": "Search a specific location on Google Map",
+    "explanation": "<strong>Q2B [25M]:</strong> Same as Slip 12 Q2B — Geocoder to search.",
+    "code": "import com.google.android.gms.maps.*; import com.google.android.gms.maps.model.*;\nimport android.location.*; import java.util.*;\n\npublic class MapsActivity extends FragmentActivity implements OnMapReadyCallback {\n  GoogleMap mMap; EditText etSearch;\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_maps);\n    etSearch=findViewById(R.id.etSearch);\n    findViewById(R.id.btnSearch).setOnClickListener(v->searchLocation());\n    ((SupportMapFragment)getSupportFragmentManager().findFragmentById(R.id.map)).getMapAsync(this);\n  }\n  @Override public void onMapReady(GoogleMap g){ mMap=g; }\n  void searchLocation(){\n    try{\n      List<Address> list=new Geocoder(this).getFromLocationName(etSearch.getText().toString(),1);\n      if(!list.isEmpty()){\n        Address a=list.get(0);\n        LatLng ll=new LatLng(a.getLatitude(),a.getLongitude());\n        mMap.clear();\n        mMap.addMarker(new MarkerOptions().position(ll).title(a.getLocality()));\n        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(ll,12));\n      }\n    }catch(Exception e){ e.printStackTrace(); }\n  }\n}"
+  },
+  {
+    "id": "and-16a",
+    "topic": "Android UI",
+    "slip": "Slip 16",
+    "name": "ScrollActivity.java",
+    "q": "Vertical ScrollView Creation in Android",
+    "explanation": "<strong>Q2A [15M]:</strong> ScrollView wrapping a LinearLayout with multiple TextViews.",
+    "code": "public class MainActivity extends AppCompatActivity {\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_main);\n    // Layout XML has ScrollView > LinearLayout > many TextViews\n    // No extra Java needed, all in XML\n    Toast.makeText(this,\"Scroll down to see more content!\",Toast.LENGTH_SHORT).show();\n  }\n}"
+  },
+  {
+    "id": "and-16b",
+    "topic": "Android UI",
+    "slip": "Slip 16",
+    "name": "TimePickerActivity.java",
+    "q": "Demonstrate TimePicker and display Selected Time on TextView",
+    "explanation": "<strong>Q2B [25M]:</strong> TimePicker with setOnTimeChangedListener.",
+    "code": "import android.widget.*;\n\npublic class MainActivity extends AppCompatActivity {\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_main);\n    TimePicker tp=findViewById(R.id.timePicker);\n    TextView tv=findViewById(R.id.tvTime);\n    tp.setOnTimeChangedListener((view,hour,minute)->\n      tv.setText(String.format(\"Selected Time: %02d:%02d\",hour,minute)));\n  }\n}"
+  },
+  {
+    "id": "and-17a",
+    "topic": "Android UI",
+    "slip": "Slip 17",
+    "name": "ImageSwitcherActivity.java",
+    "q": "Construct Image Switcher using setFactory()",
+    "explanation": "<strong>Q2A [15M]:</strong> ImageSwitcher with setFactory returning new ImageView. Button cycles images.",
+    "code": "import android.widget.*;\n\npublic class MainActivity extends AppCompatActivity {\n  int[] images={R.drawable.img1,R.drawable.img2,R.drawable.img3};\n  int index=0;\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_main);\n    ImageSwitcher is=findViewById(R.id.imageSwitcher);\n    is.setFactory(()->{\n      ImageView iv=new ImageView(this);\n      iv.setScaleType(ImageView.ScaleType.FIT_CENTER);\n      return iv;\n    });\n    is.setImageResource(images[0]);\n    findViewById(R.id.btnNext).setOnClickListener(v->{\n      index=(index+1)%images.length;\n      is.setImageResource(images[index]);\n    });\n  }\n}"
+  },
+  {
+    "id": "and-17b",
+    "topic": "Android UI",
+    "slip": "Slip 17",
+    "name": "ContextMenuActivity.java",
+    "q": "Demonstrate ContextMenu",
+    "explanation": "<strong>Q2B [25M]:</strong> Override onCreateContextMenu and onContextItemSelected.",
+    "code": "import android.view.*; import android.widget.*;\n\npublic class MainActivity extends AppCompatActivity {\n  TextView tv;\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_main);\n    tv=findViewById(R.id.textView);\n    registerForContextMenu(tv);\n  }\n  @Override public void onCreateContextMenu(ContextMenu menu,View v,ContextMenu.ContextMenuInfo info){\n    super.onCreateContextMenu(menu,v,info);\n    menu.setHeaderTitle(\"Choose Color\");\n    menu.add(0,1,0,\"Red\"); menu.add(0,2,0,\"Blue\"); menu.add(0,3,0,\"Green\");\n  }\n  @Override public boolean onContextItemSelected(MenuItem item){\n    switch(item.getItemId()){\n      case 1: tv.setTextColor(0xFFFF0000); break;\n      case 2: tv.setTextColor(0xFF0000FF); break;\n      case 3: tv.setTextColor(0xFF00FF00); break;\n    }\n    return super.onContextItemSelected(item);\n  }\n}"
+  },
+  {
+    "id": "and-18a",
+    "topic": "Android UI",
+    "slip": "Slip 18",
+    "name": "RejectActivity.java",
+    "q": "Accept two numbers, reject if both > 10, ask for new numbers",
+    "explanation": "<strong>Q2A [15M]:</strong> Simple validation: if both > 10, show error and requestFocus.",
+    "code": "public class MainActivity extends AppCompatActivity {\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_main);\n    EditText et1=findViewById(R.id.et1), et2=findViewById(R.id.et2);\n    TextView tvResult=findViewById(R.id.tvResult);\n    Button btn=findViewById(R.id.btnSubmit);\n    btn.setOnClickListener(v->{\n      int a=Integer.parseInt(et1.getText().toString());\n      int b2=Integer.parseInt(et2.getText().toString());\n      if(a>10 && b2>10){\n        tvResult.setText(\"Both numbers > 10! Enter new numbers.\");\n        et1.setText(\"\"); et2.setText(\"\"); et1.requestFocus();\n      } else {\n        tvResult.setText(\"Number 1: \"+a+\"\\nNumber 2: \"+b2);\n      }\n    });\n  }\n}"
+  },
+  {
+    "id": "and-18b",
+    "topic": "Google Maps",
+    "slip": "Slip 18",
+    "name": "GeocodingActivity.java",
+    "q": "Find specific location and display Address, City with Geocoding",
+    "explanation": "<strong>Q2B [25M]:</strong> Geocoder.getFromLocation() returns Address objects with getAddressLine(), getLocality().",
+    "code": "import android.location.*; import java.util.*;\nimport com.google.android.gms.maps.*; import com.google.android.gms.maps.model.*;\n\npublic class MapsActivity extends FragmentActivity implements OnMapReadyCallback {\n  GoogleMap mMap;\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_maps);\n    ((SupportMapFragment)getSupportFragmentManager().findFragmentById(R.id.map)).getMapAsync(this);\n  }\n  @Override public void onMapReady(GoogleMap g){\n    mMap=g;\n    LatLng loc=new LatLng(18.5204,73.8567);\n    mMap.addMarker(new MarkerOptions().position(loc).title(\"Location\"));\n    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(loc,14));\n    try{\n      List<Address> addrs=new Geocoder(this).getFromLocation(loc.latitude,loc.longitude,1);\n      if(!addrs.isEmpty()){\n        Address a=addrs.get(0);\n        String info=\"Address: \"+a.getAddressLine(0)+\"\\nCity: \"+a.getLocality();\n        Toast.makeText(this,info,Toast.LENGTH_LONG).show();\n      }\n    }catch(Exception e){ e.printStackTrace(); }\n  }\n}"
+  },
+  {
+    "id": "and-19a",
+    "topic": "Android UI",
+    "slip": "Slip 19",
+    "name": "MergeActivity.java",
+    "q": "Merge two Array/List",
+    "explanation": "<strong>Q2A [15M]:</strong> Split comma-separated strings, merge with addAll(), join with TextUtils.join().",
+    "code": "import java.util.*; import android.text.TextUtils;\n\npublic class MainActivity extends AppCompatActivity {\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_main);\n    EditText etList1=findViewById(R.id.etList1), etList2=findViewById(R.id.etList2);\n    EditText etResult=findViewById(R.id.etResult);\n    Button btnMerge=findViewById(R.id.btnMerge);\n    btnMerge.setOnClickListener(v->{\n      String[] arr1=etList1.getText().toString().split(\",\");\n      String[] arr2=etList2.getText().toString().split(\",\");\n      List<String> merged=new ArrayList<>(Arrays.asList(arr1));\n      merged.addAll(Arrays.asList(arr2));\n      etResult.setText(TextUtils.join(\",\",merged));\n    });\n  }\n}"
+  },
+  {
+    "id": "and-19b",
+    "topic": "Android UI",
+    "slip": "Slip 19",
+    "name": "CalculatorActivity.java",
+    "q": "Simple Calculator (Use Linear Layout)",
+    "explanation": "<strong>Q2B [25M]:</strong> Basic calculator with +, -, *, / buttons.",
+    "code": "public class MainActivity extends AppCompatActivity {\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_main);\n    EditText et1=findViewById(R.id.et1), et2=findViewById(R.id.et2);\n    TextView tvRes=findViewById(R.id.tvResult);\n    findViewById(R.id.btnAdd).setOnClickListener(v->{\n      double a=Double.parseDouble(et1.getText().toString());\n      double b2=Double.parseDouble(et2.getText().toString());\n      tvRes.setText(\"Result: \"+(a+b2));\n    });\n    findViewById(R.id.btnSub).setOnClickListener(v->{\n      double a=Double.parseDouble(et1.getText().toString());\n      double b2=Double.parseDouble(et2.getText().toString());\n      tvRes.setText(\"Result: \"+(a-b2));\n    });\n    findViewById(R.id.btnMul).setOnClickListener(v->{\n      double a=Double.parseDouble(et1.getText().toString());\n      double b2=Double.parseDouble(et2.getText().toString());\n      tvRes.setText(\"Result: \"+(a*b2));\n    });\n    findViewById(R.id.btnDiv).setOnClickListener(v->{\n      double a=Double.parseDouble(et1.getText().toString());\n      double b2=Double.parseDouble(et2.getText().toString());\n      tvRes.setText(b2!=0?\"Result: \"+(a/b2):\"Cannot divide by 0\");\n    });\n  }\n}"
+  },
+  {
+    "id": "and-21a",
+    "topic": "Android UI",
+    "slip": "Slip 21",
+    "name": "DatePickerActivity.java",
+    "q": "Demonstrate DatePickerDialog in Android",
+    "explanation": "<strong>Q2A [15M]:</strong> DatePickerDialog with onDateSet callback.",
+    "code": "import android.app.DatePickerDialog; import java.util.Calendar;\n\npublic class MainActivity extends AppCompatActivity {\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_main);\n    TextView tv=findViewById(R.id.tvDate);\n    Button btn=findViewById(R.id.btnPick);\n    Calendar cal=Calendar.getInstance();\n    btn.setOnClickListener(v->{\n      new DatePickerDialog(this,(view,y,m,d)->{\n        tv.setText(d+\"/\"+(m+1)+\"/\"+y);\n      },cal.get(Calendar.YEAR),cal.get(Calendar.MONTH),cal.get(Calendar.DAY_OF_MONTH)).show();\n    });\n  }\n}"
+  },
+  {
+    "id": "and-21b",
+    "topic": "Android SQLite",
+    "slip": "Slip 21",
+    "name": "GameDBHelper.java",
+    "q": "Game (no, name, type, no_of_players) — Update + Display All (SQLite)",
+    "explanation": "<strong>Q2B [25M]:</strong> Update no_of_players=4 where game=Badminton.",
+    "code": "import android.content.ContentValues; import android.content.Context;\nimport android.database.Cursor; import android.database.sqlite.*;\n\npublic class GameDBHelper extends SQLiteOpenHelper {\n  public GameDBHelper(Context c){ super(c,\"GameDB\",null,1); }\n  @Override public void onCreate(SQLiteDatabase db){\n    db.execSQL(\"CREATE TABLE Game(no INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, type TEXT, no_of_players INTEGER)\");\n  }\n  @Override public void onUpgrade(SQLiteDatabase db,int o,int n){ db.execSQL(\"DROP TABLE IF EXISTS Game\"); onCreate(db); }\n\n  public void insertGame(String name,String type,int players){\n    ContentValues cv=new ContentValues();\n    cv.put(\"name\",name); cv.put(\"type\",type); cv.put(\"no_of_players\",players);\n    getWritableDatabase().insert(\"Game\",null,cv);\n  }\n  public void updateBadminton(){\n    ContentValues cv=new ContentValues();\n    cv.put(\"no_of_players\",4);\n    getWritableDatabase().update(\"Game\",cv,\"name=?\",new String[]{\"Badminton\"});\n  }\n  public Cursor getAll(){ return getReadableDatabase().rawQuery(\"SELECT * FROM Game\",null); }\n}"
+  },
+  {
+    "id": "and-22a",
+    "topic": "Android UI",
+    "slip": "Slip 22",
+    "name": "GreetingActivity.java",
+    "q": "Simple Application showing Greeting information to User",
+    "explanation": "<strong>Q2A [15M]:</strong> Accept name, display greeting message.",
+    "code": "public class MainActivity extends AppCompatActivity {\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_main);\n    EditText etName=findViewById(R.id.etName);\n    TextView tvGreet=findViewById(R.id.tvGreet);\n    Button btn=findViewById(R.id.btnGreet);\n    btn.setOnClickListener(v->{\n      String name=etName.getText().toString();\n      java.util.Calendar cal=java.util.Calendar.getInstance();\n      int hour=cal.get(java.util.Calendar.HOUR_OF_DAY);\n      String greet=hour<12?\"Good Morning\":\"Good Evening\";\n      tvGreet.setText(greet+\", \"+name+\"! Welcome to the app.\");\n    });\n  }\n}"
+  },
+  {
+    "id": "and-22b",
+    "topic": "Android UI",
+    "slip": "Slip 22",
+    "name": "GridViewActivity.java",
+    "q": "Demonstrate GridView and onClick display Toast",
+    "explanation": "<strong>Q2B [25M]:</strong> ArrayAdapter with simple_list_item_1 on GridView. OnItemClick → Toast.",
+    "code": "import android.widget.*;\n\npublic class MainActivity extends AppCompatActivity {\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_main);\n    GridView gv=findViewById(R.id.gridView);\n    String[] items={\"Apple\",\"Banana\",\"Cherry\",\"Date\",\"Elderberry\",\"Fig\",\"Grape\",\"Honeydew\"};\n    gv.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,items));\n    gv.setOnItemClickListener((parent,view,pos,id)->\n      Toast.makeText(this,\"Clicked: \"+items[pos],Toast.LENGTH_SHORT).show());\n  }\n}"
+  },
+  {
+    "id": "and-23a",
+    "topic": "Android UI",
+    "slip": "Slip 23",
+    "name": "DatePickerEditText.java",
+    "q": "DatePickerDialog on click of EditText",
+    "explanation": "<strong>Q2A [15M]:</strong> EditText onClick triggers DatePickerDialog; selected date fills EditText.",
+    "code": "import android.app.DatePickerDialog; import java.util.Calendar;\n\npublic class MainActivity extends AppCompatActivity {\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_main);\n    EditText etDate=findViewById(R.id.etDate);\n    Calendar cal=Calendar.getInstance();\n    etDate.setOnClickListener(v->{\n      new DatePickerDialog(this,(view,y,m,d)->{\n        etDate.setText(d+\"/\"+(m+1)+\"/\"+y);\n      },cal.get(Calendar.YEAR),cal.get(Calendar.MONTH),cal.get(Calendar.DAY_OF_MONTH)).show();\n    });\n  }\n}"
+  },
+  {
+    "id": "and-23b",
+    "topic": "Android UI",
+    "slip": "Slip 23",
+    "name": "CustomListView.java",
+    "q": "Custom ListView showing BookName and Author Name",
+    "explanation": "<strong>Q2B [25M]:</strong> Custom ArrayAdapter with custom row layout containing two TextViews.",
+    "code": "import android.widget.*; import android.view.*;\nimport java.util.*;\n\npublic class MainActivity extends AppCompatActivity {\n  String[] books={\"Java Complete\",\"Android Dev\",\"Data Structures\",\"Python Crash\",\"Web Design\"};\n  String[] authors={\"James Gosling\",\"Google Team\",\"Narasimha\",\"Eric Matthes\",\"Jon Duckett\"};\n\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_main);\n    ListView lv=findViewById(R.id.listView);\n    ArrayAdapter<String> adapter=new ArrayAdapter<String>(this,android.R.layout.simple_list_item_2,android.R.id.text1,books){\n      @Override public View getView(int pos,View cv,android.view.ViewGroup parent){\n        View v=super.getView(pos,cv,parent);\n        ((TextView)v.findViewById(android.R.id.text1)).setText(books[pos]);\n        ((TextView)v.findViewById(android.R.id.text2)).setText(authors[pos]);\n        return v;\n      }\n    };\n    lv.setAdapter(adapter);\n  }\n}"
+  },
+  {
+    "id": "and-24a",
+    "topic": "Android UI",
+    "slip": "Slip 24",
+    "name": "SwitchToggle.java",
+    "q": "Demonstrate Switch and Toggle Button",
+    "explanation": "<strong>Q2A [15M]:</strong> Switch and ToggleButton with setOnCheckedChangeListener.",
+    "code": "import android.widget.*;\n\npublic class MainActivity extends AppCompatActivity {\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_main);\n    Switch sw=findViewById(R.id.switch1);\n    ToggleButton tb=findViewById(R.id.toggleBtn);\n    TextView tv=findViewById(R.id.tvStatus);\n\n    sw.setOnCheckedChangeListener((v,checked)->\n      tv.setText(\"Switch: \"+(checked?\"ON\":\"OFF\")));\n    tb.setOnCheckedChangeListener((v,checked)->\n      tv.setText(\"Toggle: \"+(checked?\"ON\":\"OFF\")));\n  }\n}"
+  },
+  {
+    "id": "and-24b",
+    "topic": "Android SQLite",
+    "slip": "Slip 24",
+    "name": "CompanyDBHelper.java",
+    "q": "Company (id, name, address, phno) — Insert + Show All (SQLite)",
+    "explanation": "<strong>Q2B [25M]:</strong> Same pattern as Customer but for Company table.",
+    "code": "import android.content.ContentValues; import android.content.Context;\nimport android.database.Cursor; import android.database.sqlite.*;\n\npublic class CompanyDBHelper extends SQLiteOpenHelper {\n  public CompanyDBHelper(Context c){ super(c,\"CompanyDB\",null,1); }\n  @Override public void onCreate(SQLiteDatabase db){\n    db.execSQL(\"CREATE TABLE Company(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, address TEXT, phno TEXT)\");\n  }\n  @Override public void onUpgrade(SQLiteDatabase db,int o,int n){ db.execSQL(\"DROP TABLE IF EXISTS Company\"); onCreate(db); }\n\n  public void insertCompany(String name,String addr,String ph){\n    ContentValues cv=new ContentValues();\n    cv.put(\"name\",name); cv.put(\"address\",addr); cv.put(\"phno\",ph);\n    getWritableDatabase().insert(\"Company\",null,cv);\n  }\n  public Cursor getAll(){ return getReadableDatabase().rawQuery(\"SELECT * FROM Company\",null); }\n}"
+  },
+  {
+    "id": "and-25a",
+    "topic": "Android UI",
+    "slip": "Slip 25",
+    "name": "RatingBarActivity.java",
+    "q": "Demonstrate RatingBar — display stars on Toast and TextView",
+    "explanation": "<strong>Q2A [15M]:</strong> RatingBar with setOnRatingBarChangeListener.",
+    "code": "import android.widget.*;\n\npublic class MainActivity extends AppCompatActivity {\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_main);\n    RatingBar rb=findViewById(R.id.ratingBar);\n    TextView tv=findViewById(R.id.tvRating);\n    rb.setOnRatingBarChangeListener((bar,rating,user)->{\n      tv.setText(\"Rating: \"+rating+\" stars\");\n      Toast.makeText(this,\"You rated: \"+rating+\" stars\",Toast.LENGTH_SHORT).show();\n    });\n  }\n}"
+  },
+  {
+    "id": "and-25b",
+    "topic": "Android SQLite",
+    "slip": "Slip 25",
+    "name": "EmployeeDBHelper.java",
+    "q": "Employee (Eno, Ename, Designation, Salary) — Insert + Display All (SQLite)",
+    "explanation": "<strong>Q2B [25M]:</strong> Standard SQLite CRUD for Employee.",
+    "code": "import android.content.ContentValues; import android.content.Context;\nimport android.database.Cursor; import android.database.sqlite.*;\n\npublic class EmployeeDBHelper extends SQLiteOpenHelper {\n  public EmployeeDBHelper(Context c){ super(c,\"EmpDB\",null,1); }\n  @Override public void onCreate(SQLiteDatabase db){\n    db.execSQL(\"CREATE TABLE Employee(Eno INTEGER PRIMARY KEY AUTOINCREMENT, Ename TEXT, Designation TEXT, Salary REAL)\");\n  }\n  @Override public void onUpgrade(SQLiteDatabase db,int o,int n){ db.execSQL(\"DROP TABLE IF EXISTS Employee\"); onCreate(db); }\n\n  public void insertEmployee(String name,String desg,double sal){\n    ContentValues cv=new ContentValues();\n    cv.put(\"Ename\",name); cv.put(\"Designation\",desg); cv.put(\"Salary\",sal);\n    getWritableDatabase().insert(\"Employee\",null,cv);\n  }\n  public Cursor getAll(){ return getReadableDatabase().rawQuery(\"SELECT * FROM Employee\",null); }\n}"
+  },
+  {
+    "id": "and-26a",
+    "topic": "Android UI",
+    "slip": "Slip 26",
+    "name": "MultiplicationTable.java",
+    "q": "Accept a number and display multiplication table (Use TableLayout)",
+    "explanation": "<strong>Q2A [15M]:</strong> Loop 1-10 and programmatically add TableRows.",
+    "code": "import android.widget.*;\n\npublic class MainActivity extends AppCompatActivity {\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_main);\n    EditText etNum=findViewById(R.id.etNum);\n    TableLayout tl=findViewById(R.id.tableLayout);\n    Button btn=findViewById(R.id.btnShow);\n    btn.setOnClickListener(v->{\n      tl.removeAllViews();\n      int n=Integer.parseInt(etNum.getText().toString());\n      for(int i=1;i<=10;i++){\n        TableRow tr=new TableRow(this);\n        TextView tv=new TextView(this);\n        tv.setText(n+\" x \"+i+\" = \"+(n*i));\n        tv.setPadding(10,5,10,5);\n        tr.addView(tv);\n        tl.addView(tr);\n      }\n    });\n  }\n}"
+  },
+  {
+    "id": "and-26b",
+    "topic": "Android UI",
+    "slip": "Slip 26",
+    "name": "SpinnerActivity.java",
+    "q": "Create layout using Spinner",
+    "explanation": "<strong>Q2B [25M]:</strong> Spinner with ArrayAdapter, OnItemSelectedListener shows Toast.",
+    "code": "import android.widget.*;\n\npublic class MainActivity extends AppCompatActivity {\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_main);\n    Spinner sp=findViewById(R.id.spinner);\n    String[] subjects={\"Java\",\"Android\",\"Python\",\"C++\",\"Web Dev\"};\n    sp.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,subjects));\n    sp.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){\n      @Override public void onItemSelected(AdapterView<?> p,android.view.View v,int pos,long id){\n        Toast.makeText(MainActivity.this,\"Selected: \"+subjects[pos],Toast.LENGTH_SHORT).show();\n      }\n      @Override public void onNothingSelected(AdapterView<?> p){}\n    });\n  }\n}"
+  },
+  {
+    "id": "and-27a",
+    "topic": "Google Maps",
+    "slip": "Slip 27",
+    "name": "HybridMapsActivity.java",
+    "q": "Zoom In, Zoom Out and display Hybrid view on Google Map",
+    "explanation": "<strong>Q2A [15M]:</strong> Uses MAP_TYPE_HYBRID.",
+    "code": "import com.google.android.gms.maps.*; import com.google.android.gms.maps.model.*;\n\npublic class MapsActivity extends FragmentActivity implements OnMapReadyCallback {\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_maps);\n    ((SupportMapFragment)getSupportFragmentManager().findFragmentById(R.id.map)).getMapAsync(this);\n  }\n  @Override public void onMapReady(GoogleMap gMap) {\n    gMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);\n    LatLng pune=new LatLng(18.5204,73.8567);\n    gMap.addMarker(new MarkerOptions().position(pune).title(\"Pune\"));\n    gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(pune,15));\n    gMap.getUiSettings().setZoomControlsEnabled(true);\n  }\n}"
+  },
+  {
+    "id": "and-27b",
+    "topic": "Android UI",
+    "slip": "Slip 27",
+    "name": "FactorialSumMenu.java",
+    "q": "Accept number, calculate Factorial and Sum of Digits using Context Menu",
+    "explanation": "<strong>Q2B [25M]:</strong> ContextMenu with two options: Factorial and Sum of Digits.",
+    "code": "import android.view.*; import android.widget.*;\n\npublic class MainActivity extends AppCompatActivity {\n  EditText etNum; TextView tvResult;\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_main);\n    etNum=findViewById(R.id.etNum); tvResult=findViewById(R.id.tvResult);\n    registerForContextMenu(tvResult);\n  }\n  @Override public void onCreateContextMenu(ContextMenu menu,View v,ContextMenu.ContextMenuInfo info){\n    super.onCreateContextMenu(menu,v,info);\n    menu.setHeaderTitle(\"Choose Operation\");\n    menu.add(0,1,0,\"Factorial\"); menu.add(0,2,0,\"Sum of Digits\");\n  }\n  @Override public boolean onContextItemSelected(MenuItem item){\n    int n=Integer.parseInt(etNum.getText().toString());\n    if(item.getItemId()==1){\n      long fact=1; for(int i=1;i<=n;i++) fact*=i;\n      tvResult.setText(\"Factorial of \"+n+\" = \"+fact);\n    } else {\n      int sum=0,temp=n; while(temp>0){ sum+=temp%10; temp/=10; }\n      tvResult.setText(\"Sum of digits of \"+n+\" = \"+sum);\n    }\n    return super.onContextItemSelected(item);\n  }\n}"
+  },
+  {
+    "id": "and-28a",
+    "topic": "Android Intent",
+    "slip": "Slip 28",
+    "name": "GreetIntentActivity.java",
+    "q": "Read person + greet message, display on another activity using Intent",
+    "explanation": "<strong>Q2A [15M]:</strong> putExtra for person and greet, getStringExtra in second activity.",
+    "code": "public class MainActivity extends AppCompatActivity {\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_main);\n    EditText etPerson=findViewById(R.id.etPerson), etGreet=findViewById(R.id.etGreet);\n    Button btn=findViewById(R.id.btnSend);\n    btn.setOnClickListener(v->{\n      Intent i=new Intent(this,DisplayActivity.class);\n      i.putExtra(\"person\",etPerson.getText().toString());\n      i.putExtra(\"greet\",etGreet.getText().toString());\n      startActivity(i);\n    });\n  }\n}\n// DisplayActivity.java:\n// String person=getIntent().getStringExtra(\"person\");\n// String greet=getIntent().getStringExtra(\"greet\");\n// tvDisplay.setText(greet+\", \"+person+\"!\");"
+  },
+  {
+    "id": "and-28b",
+    "topic": "Android UI",
+    "slip": "Slip 28",
+    "name": "CustomListViewBooks.java",
+    "q": "Custom ListView in Android Application",
+    "explanation": "<strong>Q2B [25M]:</strong> Custom adapter with custom row layout.",
+    "code": "import android.widget.*; import android.view.*;\n\npublic class MainActivity extends AppCompatActivity {\n  String[] titles={\"Java\",\"Android\",\"Python\",\"C++\",\"Web\"};\n  String[] descs={\"OOP Language\",\"Mobile Dev\",\"Scripting\",\"System Prog\",\"Frontend\"};\n\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_main);\n    ListView lv=findViewById(R.id.listView);\n    ArrayAdapter<String> adapter=new ArrayAdapter<String>(this,android.R.layout.simple_list_item_2,android.R.id.text1,titles){\n      @Override public View getView(int pos,View cv,android.view.ViewGroup parent){\n        View v=super.getView(pos,cv,parent);\n        ((TextView)v.findViewById(android.R.id.text1)).setText(titles[pos]);\n        ((TextView)v.findViewById(android.R.id.text2)).setText(descs[pos]);\n        return v;\n      }\n    };\n    lv.setAdapter(adapter);\n  }\n}"
+  },
+  {
+    "id": "and-29a",
+    "topic": "Android Intent",
+    "slip": "Slip 29",
+    "name": "MovieIntentActivity.java",
+    "q": "Accept Movie details (Name, Release Year, Collection) and display on next activity",
+    "explanation": "<strong>Q2A [15M]:</strong> Bundle putExtras for movie info, display on second activity.",
+    "code": "public class MainActivity extends AppCompatActivity {\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_main);\n    EditText etName=findViewById(R.id.etName), etYear=findViewById(R.id.etYear), etCollection=findViewById(R.id.etCollection);\n    Button btn=findViewById(R.id.btnSubmit);\n    btn.setOnClickListener(v->{\n      Intent i=new Intent(this,MovieDetailActivity.class);\n      i.putExtra(\"name\",etName.getText().toString());\n      i.putExtra(\"year\",etYear.getText().toString());\n      i.putExtra(\"collection\",etCollection.getText().toString());\n      startActivity(i);\n    });\n  }\n}\n// MovieDetailActivity.java:\n// tvName.setText(getIntent().getStringExtra(\"name\"));\n// tvYear.setText(getIntent().getStringExtra(\"year\"));\n// tvCollection.setText(getIntent().getStringExtra(\"collection\"));"
+  },
+  {
+    "id": "and-29b",
+    "topic": "Android UI",
+    "slip": "Slip 29",
+    "name": "PalindromeMenu.java",
+    "q": "Calculate Palindrome and Reverse of a number using Menu",
+    "explanation": "<strong>Q2B [25M]:</strong> Options Menu with Palindrome and Reverse. Uses StringBuilder.reverse().",
+    "code": "import android.view.*; import android.widget.*;\n\npublic class MainActivity extends AppCompatActivity {\n  EditText etNum; TextView tvResult;\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_main);\n    etNum=findViewById(R.id.etNum); tvResult=findViewById(R.id.tvResult);\n  }\n  @Override public boolean onCreateOptionsMenu(Menu menu){\n    menu.add(0,1,0,\"Palindrome\"); menu.add(0,2,0,\"Reverse\");\n    return true;\n  }\n  @Override public boolean onOptionsItemSelected(MenuItem item){\n    String s=etNum.getText().toString();\n    String rev=new StringBuilder(s).reverse().toString();\n    if(item.getItemId()==1){\n      tvResult.setText(s.equals(rev)?s+\" is Palindrome\":s+\" is NOT Palindrome\");\n    } else {\n      tvResult.setText(\"Reverse: \"+rev);\n    }\n    return super.onOptionsItemSelected(item);\n  }\n}"
+  },
+  {
+    "id": "and-9b",
+    "topic": "Android UI",
+    "slip": "Slip 9",
+    "name": "SMSActivity.java",
+    "q": "Send SMS message to a friend and display delivery report",
+    "explanation": "<strong>Q2B [25M]:</strong> Uses SmsManager.getDefault().sendTextMessage(). PendingIntent for delivery report.",
+    "code": "import android.telephony.SmsManager;\nimport android.app.PendingIntent; import android.content.Intent;\n\npublic class MainActivity extends AppCompatActivity {\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_main);\n    EditText etPhone=findViewById(R.id.etPhone), etMsg=findViewById(R.id.etMsg);\n    Button btnSend=findViewById(R.id.btnSend);\n    TextView tvStatus=findViewById(R.id.tvStatus);\n\n    btnSend.setOnClickListener(v->{\n      String phone=etPhone.getText().toString();\n      String msg=etMsg.getText().toString();\n\n      PendingIntent sentPI=PendingIntent.getBroadcast(this,0,new Intent(\"SMS_SENT\"),PendingIntent.FLAG_IMMUTABLE);\n      PendingIntent deliveredPI=PendingIntent.getBroadcast(this,0,new Intent(\"SMS_DELIVERED\"),PendingIntent.FLAG_IMMUTABLE);\n\n      registerReceiver(new android.content.BroadcastReceiver(){\n        @Override public void onReceive(android.content.Context c,Intent i){\n          tvStatus.setText(getResultCode()==RESULT_OK?\"SMS Sent!\":\"SMS Failed\");\n        }\n      }, new android.content.IntentFilter(\"SMS_SENT\"), RECEIVER_NOT_EXPORTED);\n\n      registerReceiver(new android.content.BroadcastReceiver(){\n        @Override public void onReceive(android.content.Context c,Intent i){\n          tvStatus.append(\"\\nDelivery: \"+(getResultCode()==RESULT_OK?\"Delivered\":\"Not Delivered\"));\n        }\n      }, new android.content.IntentFilter(\"SMS_DELIVERED\"), RECEIVER_NOT_EXPORTED);\n\n      SmsManager.getDefault().sendTextMessage(phone,null,msg,sentPI,deliveredPI);\n    });\n  }\n}\n// AndroidManifest.xml: <uses-permission android:name=\"android.permission.SEND_SMS\"/>"
+  },
+  {
+    "id": "and-14b-svc",
+    "topic": "Android UI",
+    "slip": "Slip 14",
+    "name": "DownloadService.java",
+    "q": "Service to download file from Internet + BroadcastReceiver notification",
+    "explanation": "<strong>Q2B [25M]:</strong> Service runs download in background thread. sendBroadcast() notifies MainActivity. Add INTERNET permission.",
+    "code": "import android.app.Service; import android.content.Intent; import android.os.IBinder;\nimport java.io.*; import java.net.*;\n\npublic class DownloadService extends Service {\n  @Override public int onStartCommand(Intent intent, int flags, int id) {\n    new Thread(()->{\n      try {\n        URL url = new URL(\"https://www.example.com/sample.txt\");\n        InputStream in = url.openStream();\n        FileOutputStream out = new FileOutputStream(getFilesDir()+\"/downloaded.txt\");\n        byte[] buf = new byte[1024]; int n;\n        while ((n=in.read(buf)) != -1) out.write(buf, 0, n);\n        in.close(); out.close();\n\n        Intent done = new Intent(\"DOWNLOAD_COMPLETE\");\n        done.putExtra(\"path\", getFilesDir()+\"/downloaded.txt\");\n        sendBroadcast(done);\n      } catch (Exception e) { e.printStackTrace(); }\n    }).start();\n    return START_NOT_STICKY;\n  }\n  @Override public IBinder onBind(Intent i) { return null; }\n}"
+  },
+  {
+    "id": "and-14b-main",
+    "topic": "Android UI",
+    "slip": "Slip 14",
+    "name": "DownloadMainActivity.java",
+    "q": "MainActivity that starts DownloadService and receives broadcast",
+    "explanation": "<strong>Q2B [25M] cont'd:</strong> Registers BroadcastReceiver to listen for DOWNLOAD_COMPLETE. Updates TextView on completion.",
+    "code": "public class MainActivity extends AppCompatActivity {\n  android.content.BroadcastReceiver receiver;\n\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b); setContentView(R.layout.activity_main);\n    Button btnDownload = findViewById(R.id.btnDownload);\n    TextView tvStatus = findViewById(R.id.tvStatus);\n\n    btnDownload.setOnClickListener(v->{\n      tvStatus.setText(\"Downloading...\");\n      startService(new Intent(this, DownloadService.class));\n    });\n\n    receiver = new android.content.BroadcastReceiver() {\n      @Override public void onReceive(android.content.Context c, Intent i) {\n        tvStatus.setText(\"Download Complete!\\nSaved at: \"+i.getStringExtra(\"path\"));\n      }\n    };\n    registerReceiver(receiver,\n      new android.content.IntentFilter(\"DOWNLOAD_COMPLETE\"),\n      RECEIVER_NOT_EXPORTED);\n  }\n\n  @Override protected void onDestroy() {\n    super.onDestroy();\n    unregisterReceiver(receiver);\n  }\n}\n// AndroidManifest.xml:\n// <service android:name=\".DownloadService\"/>\n// <uses-permission android:name=\"android.permission.INTERNET\"/>"
+  },
+  {
+    "id": "and-15a",
+    "topic": "Android UI",
+    "slip": "Slip 15",
+    "name": "BorderLayout.java",
+    "q": "Design Android layout — add a border to an Android Layout",
+    "explanation": "<strong>Q2A [15M]:</strong> Uses a drawable XML (border.xml) with <shape> and <stroke>. MainActivity just sets setContentView.",
+    "code": "// MainActivity.java — No special code needed, all in XML:\npublic class MainActivity extends AppCompatActivity {\n  @Override protected void onCreate(Bundle b) {\n    super.onCreate(b);\n    setContentView(R.layout.activity_main);\n    // All styling is done in XML layout + drawable\n  }\n}\n\n// res/drawable/border.xml:\n// <shape xmlns:android=\"http://schemas.android.com/apk/res/android\">\n//   <stroke android:width=\"3dp\" android:color=\"#000000\"/>\n//   <solid android:color=\"#2196F3\"/>\n//   <corners android:radius=\"5dp\"/>\n// </shape>\n\n// activity_main.xml:\n// <LinearLayout ... android:gravity=\"center\" android:orientation=\"vertical\">\n//   <LinearLayout android:background=\"@drawable/border\"\n//     android:margin=\"20dp\" android:gravity=\"center\">\n//     <TextView android:text=\"Hello World!\"\n//       android:textColor=\"#FFFFFF\" android:textSize=\"24sp\"/>\n//   </LinearLayout>\n// </LinearLayout>"
+  },
+  {
+    "id": "sock-18",
+    "topic": "Socket",
+    "slip": "Slip 18",
+    "name": "ChatServer.java",
+    "q": "Simple standalone chatting application (Socket)",
+    "explanation": "<strong>Q1B [25M]:</strong> Server uses ServerSocket(5000) and accept(). Reads/writes via BufferedReader/PrintWriter in a thread loop.",
+    "code": "import java.io.*; import java.net.*;\n\npublic class ChatServer {\n  public static void main(String[] args) throws Exception {\n    ServerSocket ss = new ServerSocket(5000);\n    System.out.println(\"Server waiting...\");\n    Socket s = ss.accept();\n    System.out.println(\"Client connected!\");\n\n    BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));\n    PrintWriter out = new PrintWriter(s.getOutputStream(), true);\n    BufferedReader kb = new BufferedReader(new InputStreamReader(System.in));\n\n    String msg;\n    while (true) {\n      msg = in.readLine();\n      if (msg.equalsIgnoreCase(\"bye\")) break;\n      System.out.println(\"Client: \" + msg);\n      System.out.print(\"Server: \");\n      out.println(kb.readLine());\n    }\n    s.close(); ss.close();\n  }\n}"
+  },
+  {
+    "id": "sock-18c",
+    "topic": "Socket",
+    "slip": "Slip 18",
+    "name": "ChatClient.java",
+    "q": "Chat client connecting to server (Socket)",
+    "explanation": "<strong>Q1B [25M] cont'd:</strong> Client uses Socket(\"localhost\",5000). Same BufferedReader/PrintWriter pattern.",
+    "code": "import java.io.*; import java.net.*;\n\npublic class ChatClient {\n  public static void main(String[] args) throws Exception {\n    Socket s = new Socket(\"localhost\", 5000);\n    System.out.println(\"Connected to server!\");\n\n    BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));\n    PrintWriter out = new PrintWriter(s.getOutputStream(), true);\n    BufferedReader kb = new BufferedReader(new InputStreamReader(System.in));\n\n    String msg;\n    while (true) {\n      System.out.print(\"Client: \");\n      msg = kb.readLine();\n      out.println(msg);\n      if (msg.equalsIgnoreCase(\"bye\")) break;\n      System.out.println(\"Server: \" + in.readLine());\n    }\n    s.close();\n  }\n}"
+  }
+];
+
+// end PROGRAMS
+
+// ══════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════
+
+let prog = null;
+let progIdx = -1;
+let typedOk = [];      // boolean per position
+let typedChars = [];   // actual chars typed
+let typedCount = 0;
+let totalErr = 0;
+let startTime = null;
+let done = false;
+let answerVisible = false;
+let sortBySlip = false;
+const doneSet = new Set();
+
+// ══════════════════════════════════════════════════════════════
+// SIDEBAR
+// ══════════════════════════════════════════════════════════════
+
+const topicColors = {
+  'JSP':            '#fab387',
+  'JDBC':           '#89b4fa',
+  'Servlet':        '#cba6f7',
+  'Socket':         '#a6e3a1',
+  'Thread':         '#f38ba8',
+  'Android SQLite': '#fab387',
+  'Android Intent': '#74c7ec',
+  'Google Maps':    '#94e2d5',
+};
+
+function buildSidebar(filter=''){
+  const groups = {};
+  const groupKey = sortBySlip ? 'slip' : 'topic';
+
+  P.forEach((p,i) => {
+    const f = filter.toLowerCase();
+    const match = !f ||
+      p.name.toLowerCase().includes(f) ||
+      p.slip.toLowerCase().includes(f) ||
+      p.topic.toLowerCase().includes(f) ||
+      p.q.toLowerCase().includes(f);
+    if(match){
+      const key = p[groupKey];
+      if(!groups[key]) groups[key] = [];
+      groups[key].push({...p, idx:i});
+    }
+  });
+
+  const list = document.getElementById('program-list');
+  list.innerHTML = '';
+
+  // Sort group keys
+  let sortedKeys = Object.keys(groups);
+  if(sortBySlip){
+    sortedKeys.sort((a,b) => {
+      const na = parseInt(a.replace(/\D/g,'')) || 0;
+      const nb = parseInt(b.replace(/\D/g,'')) || 0;
+      return na - nb;
+    });
+  }
+
+  for(const key of sortedKeys){
+    const items = groups[key];
+    if(!items.length) continue;
+    const g = document.createElement('div');
+    g.className = 'topic-group';
+
+    const color = sortBySlip ? '#f9e2af' : (topicColors[key] || '#89b4fa');
+    const slug = key.replace(/\s+/g,'-');
+
+    const h = document.createElement('div');
+    h.className = `topic-header`;
+    h.style.color = color;
+    h.innerHTML = `${key} <span style="color:var(--muted);font-weight:400">(${items.length})</span>`;
+
+    const ps = document.createElement('div');
+    ps.className = 'topic-programs';
+
+    items.forEach(p => {
+      const el = document.createElement('div');
+      el.className = 'program-item' + (progIdx === p.idx ? ' active' : '');
+      el.innerHTML =
+        (sortBySlip ? `<span class="pi-slip" style="color:${topicColors[p.topic]||'#89b4fa'}">${p.topic}</span>` : `<span class="pi-slip">${p.slip}</span>`) +
+        `<span class="pi-name">${p.name}</span>` +
+        (doneSet.has(p.id) ? `<span class="pi-done">✓</span>` : '');
+      el.onclick = () => loadProg(p.idx);
+      ps.appendChild(el);
+    });
+
+    h.onclick = () => {
+      ps.style.display = ps.style.display === 'none' ? '' : 'none';
+      h.classList.toggle('collapsed');
+    };
+
+    g.appendChild(h); g.appendChild(ps);
+    list.appendChild(g);
+  }
+
+  const total = P.length;
+  const done2 = doneSet.size;
+  document.getElementById('hb-count').textContent =
+    `${done2}/${total} programs completed`;
+}
+
+// ══════════════════════════════════════════════════════════════
+// LOAD PROGRAM
+// ══════════════════════════════════════════════════════════════
+
+function loadProg(idx){
+  prog = P[idx];
+  progIdx = idx;
+  typedOk = [];
+  typedChars = [];
+  typedCount = 0;
+  totalErr = 0;
+  startTime = null;
+  done = false;
+
+  document.getElementById('complete-overlay').classList.remove('show');
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('code-display').style.display = 'block';
+
+  // Notes visibility
+  const np = document.getElementById('notes-panel');
+  const nc = document.getElementById('notes-content');
+  if(prog.explanation) {
+    np.style.display = 'block';
+    nc.innerHTML = prog.explanation;
+    // open by default so it's obvious!
+    nc.style.display = 'block';
+    document.getElementById('notes-icon').textContent = '▲';
+  } else {
+    np.style.display = 'none';
+  }
+
+  // Reset answer visibility and show button
+  answerVisible = false;
+  const ansBtn = document.getElementById('btn-answer');
+  ansBtn.style.display = '';
+  ansBtn.textContent = '👁 Show Answer';
+  ansBtn.classList.remove('answer-active');
+
+  document.getElementById('t-main').textContent =
+    `${prog.topic}  ·  ${prog.slip}  ·  ${prog.name}`;
+  document.getElementById('t-q').textContent = 'Q: ' + prog.q;
+
+  buildSidebar(document.getElementById('search-input').value);
+  renderCode();
+  updateStats();
+}
+
+// ══════════════════════════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════════════════════════
+
+function esc(ch){
+  return ch==='&'?'&amp;':ch==='<'?'&lt;':ch==='>'?'&gt;':ch==='"'?'&quot;':ch;
+}
+
+function renderCode(){
+  if(!prog) return;
+  const chars = [...prog.code];
+  let html = '';
+
+  chars.forEach((ch, i) => {
+    let st = i === typedCount ? 'cursor' : i < typedCount ? (typedOk[i] ? 'correct' : 'wrong') : 'untyped';
+    // Determine extra class: revealed (teal) or hidden (invisible)
+    let extra = '';
+    if(st === 'untyped' || (st === 'cursor' && i >= typedCount)){
+      extra = answerVisible ? ' revealed' : ' hidden';
+    }
+
+    if(st === 'wrong' && typedChars[i] != null) {
+      if(typedChars[i] === '\n') {
+        html += `<span class="c nl ${st}${extra}">↵</span>`;
+      } else if (typedChars[i] === ' ') {
+        html += `<span class="c sp ${st}${extra}">_</span>`;
+      } else {
+        html += `<span class="c ${st}${extra}">${esc(typedChars[i])}</span>`;
+      }
+    } else {
+      if(ch === '\n'){
+        html += `<span class="c nl ${st}${extra}">↵</span>\n`;
+      } else if(ch === ' '){
+        html += `<span class="c sp ${st}${extra}"> </span>`;
+      } else {
+        html += `<span class="c ${st}${extra}">${esc(ch)}</span>`;
+      }
+    }
+  });
+
+  // End-of-code cursor
+  if(typedCount >= chars.length && chars.length > 0){
+    html += `<span class="c cursor" style="padding:0 3px">█</span>`;
+  }
+
+  const el = document.getElementById('code-display');
+  el.innerHTML = html;
+
+  // Scroll cursor into view
+  requestAnimationFrame(() => {
+    const cur = el.querySelector('.cursor');
+    if(cur) cur.scrollIntoView({ block:'nearest', behavior:'smooth' });
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// STATS
+// ══════════════════════════════════════════════════════════════
+
+function updateStats(){
+  if(!prog) return;
+  const total = [...prog.code].length;
+  const pct = total > 0 ? Math.round(typedCount / total * 100) : 0;
+  const acc = typedCount > 0
+    ? Math.round(typedOk.filter(Boolean).length / typedCount * 100) : null;
+
+  document.getElementById('sv-done').textContent = pct + '%';
+  document.getElementById('sv-acc').textContent = acc !== null ? acc + '%' : '—';
+  document.getElementById('sv-err').textContent = totalErr;
+  document.getElementById('prog-bar').style.width = pct + '%';
+}
+
+// ══════════════════════════════════════════════════════════════
+// KEY HANDLER
+// ══════════════════════════════════════════════════════════════
+
+function focusArea(){ /* no-op, keydown is global */ }
+
+document.addEventListener('keydown', e => {
+  // Ctrl+H toggles answer visibility
+  if(e.ctrlKey && e.key.toLowerCase() === 'h'){
+    e.preventDefault();
+    toggleAnswer();
+    return;
+  }
+  if(!prog || done) return;
+  if(e.ctrlKey || e.altKey || e.metaKey) return;
+
+  const chars = [...prog.code];
+
+  if(e.key === 'Escape'){
+    e.preventDefault();
+    resetTyping();
+    return;
+  }
+
+  if(e.key === 'Backspace'){
+    e.preventDefault();
+    if(typedCount > 0){
+      typedCount--;
+      typedOk.pop();
+      typedChars.pop();
+      renderCode();
+      updateStats();
+    }
+    return;
+  }
+
+  // ArrowRight → auto-fill next correct character hint
+  if(e.key === 'ArrowRight'){
+    e.preventDefault();
+    if(typedCount < chars.length){
+      if(!startTime) startTime = Date.now();
+      typedOk.push(true);
+      typedChars.push(chars[typedCount]);
+      typedCount++;
+      renderCode();
+      updateStats();
+      checkDone();
+    }
+    return;
+  }
+
+  // Tab → auto-fill all consecutive spaces at current position
+  if(e.key === 'Tab'){
+    e.preventDefault();
+    let skipped = 0;
+    while(typedCount < chars.length && chars[typedCount] === ' '){
+      typedOk.push(true);
+      typedChars.push(' ');
+      typedCount++;
+      skipped++;
+    }
+    if(skipped){
+      renderCode();
+      updateStats();
+      checkDone();
+    }
+    return;
+  }
+
+  // Printable char or Enter
+  let actual = '';
+  if(e.key === 'Enter') actual = '\n';
+  else if(e.key.length === 1) actual = e.key;
+  else return;
+
+  e.preventDefault();
+  if(typedCount >= chars.length) return;
+
+  if(!startTime && typedCount === 0) startTime = Date.now();
+
+  const correct = actual === chars[typedCount];
+  if(!correct) totalErr++;
+  typedOk.push(correct);
+  typedChars.push(actual);
+  typedCount++;
+
+  renderCode();
+  updateStats();
+  checkDone();
+});
+
+function checkDone(){
+  if(!prog) return;
+  const total = [...prog.code].length;
+  if(typedCount < total) return;
+
+  done = true;
+  doneSet.add(prog.id);
+
+  const elapsed = startTime ? Math.round((Date.now() - startTime) / 1000) : 0;
+  const acc = Math.round(typedOk.filter(Boolean).length / typedCount * 100);
+
+  document.getElementById('co-acc').textContent = acc + '%';
+  document.getElementById('co-err').textContent = totalErr;
+  document.getElementById('co-time').textContent = elapsed + 's';
+  document.getElementById('complete-overlay').classList.add('show');
+
+  buildSidebar(document.getElementById('search-input').value);
+}
+
+function resetTyping(){
+  if(!prog) return;
+  typedOk = [];
+  typedChars = [];
+  typedCount = 0;
+  totalErr = 0;
+  startTime = null;
+  done = false;
+  answerVisible = false;
+  const ansBtn = document.getElementById('btn-answer');
+  ansBtn.textContent = '👁 Show Answer';
+  ansBtn.classList.remove('answer-active');
+  document.getElementById('complete-overlay').classList.remove('show');
+  renderCode();
+  updateStats();
+}
+
+function toggleAnswer(){
+  if(!prog) return;
+  answerVisible = !answerVisible;
+  const ansBtn = document.getElementById('btn-answer');
+  ansBtn.textContent = answerVisible ? '👁‍🗨 Hide Answer' : '👁 Show Answer';
+  ansBtn.classList.toggle('answer-active', answerVisible);
+  renderCode();
+}
+
+function toggleNotes(){
+  const nc = document.getElementById('notes-content');
+  const icon = document.getElementById('notes-icon');
+  if(nc.style.display === 'none') {
+    nc.style.display = 'block';
+    icon.textContent = '▲';
+  } else {
+    nc.style.display = 'none';
+    icon.textContent = '▼';
+  }
+}
+
+function toggleSort(){
+  sortBySlip = !sortBySlip;
+  const btn = document.getElementById('btn-sort');
+  btn.textContent = sortBySlip ? '📂 Sort by Topic' : '📋 Sort by Slip';
+  btn.classList.toggle('active', sortBySlip);
+  buildSidebar(document.getElementById('search-input').value);
+}
+
+function nextProgram(){
+  if(progIdx < P.length - 1) loadProg(progIdx + 1);
+}
+
+// ══════════════════════════════════════════════════════════════
+// SEARCH
+// ══════════════════════════════════════════════════════════════
+
+document.getElementById('search-input').addEventListener('input', e => {
+  buildSidebar(e.target.value);
+});
+
+// Prevent Tab from leaving page
+document.addEventListener('keydown', e => {
+  if(e.key === 'Tab') e.preventDefault();
+}, { capture: true });
+
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
+
+buildSidebar();
+
+</script>
+</body>
+</html>
